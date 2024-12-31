@@ -10,20 +10,19 @@ const MediaAnalysis = () => {
   useEffect(() => {
     const fetchMediaAnalysis = async () => {
       try {
-        const result = await NativeModules.NativeModule.getDetailedMediaAnalysis();
+        const result = await NativeModule.getDetailedMediaAnalysis();
         console.log('Media Analysis Result:', result);
         setMediaData(result);
       } catch (error) {
         console.error('Error fetching media analysis:', error);
-        Alert.alert('Error', 'Failed to fetch media analysis.');
+        Alert.alert('Error', 'Failed to fetch media analysis. Please check permissions and try again.');
       }
     };
-    
   
-    
-
     fetchMediaAnalysis();
   }, []);
+  
+  
 
   if (!mediaData) {
     return (
@@ -39,7 +38,7 @@ const MediaAnalysis = () => {
       <Text style={styles.data}>Images Size: {mediaData.imagesSize} MB</Text>
       <Text style={styles.data}>Videos Size: {mediaData.videosSize} MB</Text>
       <Text style={styles.title}>Documents</Text>
-      {mediaData.documents && mediaData.documents.length > 0 ? (
+      {mediaData.documents && Array.isArray(mediaData.documents) && mediaData.documents.length > 0 ? (
         mediaData.documents.map((doc, index) => (
           <View key={index} style={styles.document}>
             <Text>Name: {doc.name}</Text>
@@ -48,10 +47,12 @@ const MediaAnalysis = () => {
           </View>
         ))
       ) : (
-        <Text>No documents found.</Text>
+        <Text>No documents found or invalid data.</Text>
       )}
+
+
     </ScrollView>
-  );
+  );  
 };
 
 const styles = StyleSheet.create({

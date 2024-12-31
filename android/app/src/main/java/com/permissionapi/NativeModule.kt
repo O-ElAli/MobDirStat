@@ -10,6 +10,10 @@ import com.facebook.react.bridge.*
 import com.permissionapi.helpers.AppsAnalysisHelper
 import com.permissionapi.helpers.MediaAnalysisHelper
 import android.provider.MediaStore
+import android.net.Uri
+import android.os.Environment
+import android.provider.Settings
+
 
 class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
@@ -57,19 +61,8 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
     @ReactMethod
     fun getDetailedMediaAnalysis(promise: Promise) {
         try {
-            val permissionsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                ContextCompat.checkSelfPermission(
-                    reactApplicationContext,
-                    Manifest.permission.READ_MEDIA_IMAGES
-                ) == PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(
-                    reactApplicationContext,
-                    Manifest.permission.READ_MEDIA_VIDEO
-                ) == PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(
-                    reactApplicationContext,
-                    Manifest.permission.READ_MEDIA_AUDIO
-                ) == PackageManager.PERMISSION_GRANTED
+            val permissionsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                Environment.isExternalStorageManager()
             } else {
                 ContextCompat.checkSelfPermission(
                     reactApplicationContext,
@@ -86,16 +79,37 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
 
             val imagesSize = mediaHelper.getTotalSize(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             val videosSize = mediaHelper.getTotalSize(MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
-            val documents = mediaHelper.getDocumentsWithSizes()
+
+            // Update document fetching logic
+            val documents = mediaHelper.getDocumentsWithDetails().split("\n").map { line ->
+                val parts = line.split(", ")
+                if (parts.size >= 3) {
+                    mapOf(
+                        "name" to parts[0].substringAfter("Document: ").trim(),
+                        "size" to parts[1].substringAfter("Size: ").toLong() / (1024 * 1024), // Convert to MB
+                        "type" to parts[2].substringAfter("Type: ").trim()
+                    )
+                } else {
+                    null
+                }
+            }.filterNotNull()
 
             val result = mapOf(
                 "imagesSize" to imagesSize / (1024 * 1024), // Convert to MB
                 "videosSize" to videosSize / (1024 * 1024),
                 "documents" to documents
             )
+
+            Log.d("NativeModule", "Returning media analysis result: $result")
             promise.resolve(result)
         } catch (e: Exception) {
+            Log.e("NativeModule", "Error during media analysis", e)
             promise.reject("MEDIA_ANALYSIS_ERROR", "Failed to fetch media analysis", e)
         }
     }
+
+    
+
+
+
 }

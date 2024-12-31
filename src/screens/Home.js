@@ -10,32 +10,20 @@ const Home = ({ navigation }) => {
   const requestMediaPermissions = async () => {
     try {
       if (Platform.OS === 'android') {
-        if (Platform.Version >= 33) {
-          // For Android 13+
-          const granted = await PermissionsAndroid.requestMultiple([
-            PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
-            PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
-            PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO,
-          ]);
-
-          if (
-            granted['android.permission.READ_MEDIA_IMAGES'] === PermissionsAndroid.RESULTS.GRANTED &&
-            granted['android.permission.READ_MEDIA_VIDEO'] === PermissionsAndroid.RESULTS.GRANTED &&
-            granted['android.permission.READ_MEDIA_AUDIO'] === PermissionsAndroid.RESULTS.GRANTED
-          ) {
-            Alert.alert('Permissions granted!', 'Media permissions granted successfully.');
-          } else {
+        if (Platform.Version >= 30) { // Android 11+
+          const isGranted = await NativeModule.checkAndRequestPermissions(); // Use NativeModule
+          if (!isGranted) {
             Alert.alert(
               'Permissions required',
-              'Media permissions are required to analyze media files. Please grant them in settings.'
+              'Please enable file access permissions in settings for complete media analysis.'
             );
+          } else {
+            Alert.alert('Permissions granted!', 'All permissions are granted.');
           }
-        } else {
-          // For Android 6.0 to 12
+        } else if (Platform.Version >= 23) { // Android 6.0 to 10
           const granted = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE
           );
-
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
             Alert.alert('Permission granted!', 'Media permissions granted successfully.');
           } else {
@@ -44,6 +32,8 @@ const Home = ({ navigation }) => {
               'Media permissions are required to analyze media files. Please grant them in settings.'
             );
           }
+        } else {
+          Alert.alert('Unsupported platform', 'Media analysis is supported only on modern Android versions.');
         }
       } else {
         Alert.alert('Unsupported platform', 'Media analysis is supported only on Android.');
@@ -53,6 +43,7 @@ const Home = ({ navigation }) => {
       Alert.alert('Error', 'An error occurred while requesting media permissions.');
     }
   };
+  
 
   return (
     <View style={styles.container}>
