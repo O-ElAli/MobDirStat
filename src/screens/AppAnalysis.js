@@ -4,12 +4,6 @@ import { NativeModules } from 'react-native';
 
 const { NativeModule } = NativeModules;
 
-console.log(NativeModule); // Log this to confirm the module is loaded
-
-NativeModule.getInstalledApps()
-    .then(apps => console.log(apps))
-    .catch(error => console.error(error));
-
 const AppAnalysis = () => {
   const [apps, setApps] = useState('');
 

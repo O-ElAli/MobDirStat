@@ -3,7 +3,7 @@ package com.permissionapi
 import android.content.Intent
 import android.util.Log
 import android.content.pm.PackageManager
-import android.os.Build // This import resolves the 'Build' reference issue
+import android.os.Build
 import androidx.core.content.ContextCompat
 import android.Manifest
 import com.facebook.react.bridge.*
@@ -57,8 +57,6 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
     @ReactMethod
     fun getDetailedMediaAnalysis(promise: Promise) {
         try {
-            Log.d("NativeModule", "Checking permissions for media analysis...")
-
             val permissionsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 ContextCompat.checkSelfPermission(
                     reactApplicationContext,
@@ -80,7 +78,6 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
             }
 
             if (!permissionsGranted) {
-                Log.e("NativeModule", "Permissions not granted for media analysis")
                 promise.reject("PERMISSION_ERROR", "Permissions not granted for media analysis")
                 return
             }
@@ -98,7 +95,6 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
             )
             promise.resolve(result)
         } catch (e: Exception) {
-            Log.e("NativeModule", "Error during media analysis", e)
             promise.reject("MEDIA_ANALYSIS_ERROR", "Failed to fetch media analysis", e)
         }
     }

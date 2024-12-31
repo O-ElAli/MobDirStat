@@ -41,7 +41,7 @@ const Home = ({ navigation }) => {
           } else {
             Alert.alert(
               'Permission required',
-              'Media permissions are required to analyze media files. Please gran t them in settings.'
+              'Media permissions are required to analyze media files. Please grant them in settings.'
             );
           }
         }
@@ -63,7 +63,7 @@ const Home = ({ navigation }) => {
             const granted = await NativeModule.requestUsageStatsPermission();
             if (granted) {
               Alert.alert('Permission granted!');
-              navigation.navigate('App Analysis'); // Navigate to the next screen
+              // Remove automatic navigation to App Analysis
             } else {
               Alert.alert('Permission not granted. Please enable it in settings.');
             }
