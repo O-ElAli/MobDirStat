@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { NativeModules } from 'react-native';
 
 const { NativeModule } = NativeModules;
@@ -11,53 +11,40 @@ const MediaAnalysis = () => {
     const fetchMediaAnalysis = async () => {
       try {
         const result = await NativeModule.getDetailedMediaAnalysis();
-        console.log('Media Analysis Result:', result);
-        setMediaData(result);
+        console.log('Media Analysis Result:', result); // Log the result
+        setMediaData(result); // Save result in state
       } catch (error) {
         console.error('Error fetching media analysis:', error);
-        Alert.alert('Error', 'Failed to fetch media analysis. Please check permissions and try again.');
+        Alert.alert('Error', 'Failed to fetch media analysis.');
       }
     };
-  
+
     fetchMediaAnalysis();
   }, []);
-  
-  
 
   if (!mediaData) {
     return (
       <View style={styles.container}>
-        <Text>Loading media analysis...</Text>  
+        <Text>Loading media analysis...</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.title}>Media Storage Analysis</Text>
       <Text style={styles.data}>Images Size: {mediaData.imagesSize} MB</Text>
       <Text style={styles.data}>Videos Size: {mediaData.videosSize} MB</Text>
-      <Text style={styles.title}>Documents</Text>
-      {mediaData.documents && Array.isArray(mediaData.documents) && mediaData.documents.length > 0 ? (
-        mediaData.documents.map((doc, index) => (
-          <View key={index} style={styles.document}>
-            <Text>Name: {doc.name}</Text>
-            <Text>Size: {doc.size} MB</Text>
-            <Text>Type: {doc.type}</Text>
-          </View>
-        ))
-      ) : (
-        <Text>No documents found or invalid data.</Text>
-      )}
-
-
-    </ScrollView>
-  );  
+      <Text style={styles.data}>Message: {mediaData.message}</Text>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
   title: {
@@ -69,13 +56,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     marginBottom: 10,
-  },
-  document: {
-    marginBottom: 15,
-    padding: 10,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
   },
 });
 

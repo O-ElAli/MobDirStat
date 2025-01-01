@@ -60,56 +60,36 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
 
     @ReactMethod
     fun getDetailedMediaAnalysis(promise: Promise) {
+        Log.d("NativeModule", "getDetailedMediaAnalysis called") // Log method call
         try {
-            val permissionsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                Environment.isExternalStorageManager()
-            } else {
-                ContextCompat.checkSelfPermission(
+            // Permissions check (ensure they are granted)
+            if (ContextCompat.checkSelfPermission(
                     reactApplicationContext,
-                    Manifest.permission.READ_EXTERNAL_STORAGE
-                ) == PackageManager.PERMISSION_GRANTED
-            }
-
-            if (!permissionsGranted) {
+                    android.Manifest.permission.READ_MEDIA_IMAGES
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.e("NativeModule", "READ_MEDIA_IMAGES permission not granted")
                 promise.reject("PERMISSION_ERROR", "Permissions not granted for media analysis")
                 return
             }
 
             val mediaHelper = MediaAnalysisHelper(reactApplicationContext)
 
+            // Fetch media sizes
             val imagesSize = mediaHelper.getTotalSize(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             val videosSize = mediaHelper.getTotalSize(MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
 
-            // Update document fetching logic
-            val documents = mediaHelper.getDocumentsWithDetails().split("\n").map { line ->
-                val parts = line.split(", ")
-                if (parts.size >= 3) {
-                    mapOf(
-                        "name" to parts[0].substringAfter("Document: ").trim(),
-                        "size" to parts[1].substringAfter("Size: ").toLong() / (1024 * 1024), // Convert to MB
-                        "type" to parts[2].substringAfter("Type: ").trim()
-                    )
-                } else {
-                    null
-                }
-            }.filterNotNull()
+            // Prepare result map
+            val result = Arguments.createMap()
+            result.putDouble("imagesSize", imagesSize / (1024.0 * 1024.0)) // Convert to MB
+            result.putDouble("videosSize", videosSize / (1024.0 * 1024.0)) // Convert to MB
+            result.putString("message", "Analysis complete")
 
-            val result = mapOf(
-                "imagesSize" to imagesSize / (1024 * 1024), // Convert to MB
-                "videosSize" to videosSize / (1024 * 1024),
-                "documents" to documents
-            )
-
-            Log.d("NativeModule", "Returning media analysis result: $result")
+            Log.d("NativeModule", "Returning result: $result")
             promise.resolve(result)
         } catch (e: Exception) {
-            Log.e("NativeModule", "Error during media analysis", e)
-            promise.reject("MEDIA_ANALYSIS_ERROR", "Failed to fetch media analysis", e)
+            Log.e("NativeModule", "Error in getDetailedMediaAnalysis", e)
+            promise.reject("MEDIA_ANALYSIS_ERROR", "Failed in getDetailedMediaAnalysis", e)
         }
     }
-
-    
-
-
-
 }

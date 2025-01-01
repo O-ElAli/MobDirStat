@@ -4,36 +4,44 @@ import { NativeModules } from 'react-native';
 
 const { NativeModule } = NativeModules;
 
-console.log('NativeModule:', NativeModules.NativeModule);
-
 const Home = ({ navigation }) => {
   const requestMediaPermissions = async () => {
     try {
       if (Platform.OS === 'android') {
         if (Platform.Version >= 30) { // Android 11+
-          const isGranted = await NativeModule.checkAndRequestPermissions(); // Use NativeModule
-          if (!isGranted) {
+          const granted = await PermissionsAndroid.requestMultiple([
+            PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
+            PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
+            PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO,
+          ]);
+          console.log('Permissions:', granted); // Logs the granted permissions
+
+          if (
+            granted['android.permission.READ_MEDIA_IMAGES'] === PermissionsAndroid.RESULTS.GRANTED &&
+            granted['android.permission.READ_MEDIA_VIDEO'] === PermissionsAndroid.RESULTS.GRANTED &&
+            granted['android.permission.READ_MEDIA_AUDIO'] === PermissionsAndroid.RESULTS.GRANTED
+          ) {
+            Alert.alert('Permissions granted!', 'Media permissions granted successfully.');
+          } else {
             Alert.alert(
               'Permissions required',
-              'Please enable file access permissions in settings for complete media analysis.'
+              'Please grant media permissions in settings.'
             );
-          } else {
-            Alert.alert('Permissions granted!', 'All permissions are granted.');
           }
-        } else if (Platform.Version >= 23) { // Android 6.0 to 10
+        } else { // Android 10 and below
           const granted = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE
           );
+          console.log('Permission:', granted); // Logs the granted permission
+
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
             Alert.alert('Permission granted!', 'Media permissions granted successfully.');
           } else {
             Alert.alert(
               'Permission required',
-              'Media permissions are required to analyze media files. Please grant them in settings.'
+              'Please grant media permissions in settings.'
             );
           }
-        } else {
-          Alert.alert('Unsupported platform', 'Media analysis is supported only on modern Android versions.');
         }
       } else {
         Alert.alert('Unsupported platform', 'Media analysis is supported only on Android.');
@@ -75,6 +83,10 @@ const Home = ({ navigation }) => {
         title="Media Analysis"
         onPress={() => navigation.navigate('Media Analysis')}
       />
+      <Button
+  title="Test Bridge"
+  onPress={() => navigation.navigate('TestBridge')}
+/>
     </View>
   );
 };

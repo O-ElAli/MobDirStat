@@ -17,16 +17,12 @@ class MediaAnalysisHelper(private val context: Context) {
             val cursor: Cursor? = context.contentResolver.query(uri, projection, null, null, null)
             cursor?.use {
                 val sizeIndex = it.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE)
-                val nameIndex = it.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
-
                 while (it.moveToNext()) {
                     val fileSize = it.getLong(sizeIndex)
-                    val fileName = it.getString(nameIndex)
                     if (fileSize > 0) {
                         totalSize += fileSize
-                        Log.d("MediaAnalysisHelper", "File: $fileName, Size: $fileSize")
                     } else {
-                        Log.w("MediaAnalysisHelper", "File $fileName has size $fileSize, skipping")
+                        Log.w("MediaAnalysisHelper", "Skipping file with invalid size: $fileSize")
                     }
                 }
             } ?: Log.e("MediaAnalysisHelper", "Cursor is null for URI: $uri")
@@ -37,7 +33,7 @@ class MediaAnalysisHelper(private val context: Context) {
         Log.d("MediaAnalysisHelper", "Total size for URI $uri: $totalSize")
         return totalSize
     }
-
+    
     fun getDocumentsWithDetails(): String {
         Log.d("MediaAnalysisHelper", "Starting getDocumentsWithDetails")
         val documentDetailsList = mutableListOf<Triple<String, Long, String>>() // (Name, Size, MIME Type)
