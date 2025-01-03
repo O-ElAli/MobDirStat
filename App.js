@@ -56,7 +56,8 @@ const PermissionsScreen = ({ navigation }) => {
 const App = () => {
     return (
         <NavigationContainer>
-            <Stack.Navigator initialRouteName="Home">
+            <Stack.Navigator initialRouteName="Home"
+            screenOptions={{ headerShown: false}}>
             <Stack.Screen name="Home" component={Home} />
             <Stack.Screen name="App Analysis" component={AppAnalysis} />
             <Stack.Screen name="Media Analysis" component={MediaAnalysis} />
