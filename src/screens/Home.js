@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { View, Button, StyleSheet, Alert, PermissionsAndroid, Platform, Text, Animated, ActivityIndicator } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // AsyncStorage for permission tracking
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeModules } from 'react-native';
 
 const { NativeModule } = NativeModules;
 
 const Home = ({ navigation }) => {
-  const [fadeAnim] = useState(new Animated.Value(0));
+  const [fadeAnim] = useState(new Animated.Value(0)); // Fade animation for current screen
+  const [nextScreenFadeAnim] = useState(new Animated.Value(0)); // Fade animation for next screen
   const [loading, setLoading] = useState(true);
-  const [showWelcome, setShowWelcome] = useState(true); // Controls the welcome page
+  const [showWelcome, setShowWelcome] = useState(true);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
 
   useEffect(() => {
@@ -32,11 +33,27 @@ const Home = ({ navigation }) => {
     if (!loading) {
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 500, // Smooth fade-in effect
         useNativeDriver: true,
       }).start();
     }
   }, [loading]);
+
+  const fadeOutAndContinue = (nextStep) => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 500, // Fade-out animation matches fade-in
+      useNativeDriver: true,
+    }).start(() => {
+      setShowWelcome(false);
+      setPermissionsGranted(nextStep);
+      Animated.timing(nextScreenFadeAnim, {
+        toValue: 1,
+        duration: 500, // Smooth fade-in for the next screen
+        useNativeDriver: true,
+      }).start();
+    });
+  };
 
   const requestPermissions = async () => {
     try {
@@ -44,9 +61,8 @@ const Home = ({ navigation }) => {
       const mediaPermissions = await requestMediaPermissions();
 
       if (usageStatsGranted && mediaPermissions) {
-        await AsyncStorage.setItem('permissionsGranted', 'true'); // Store permission status
-        setPermissionsGranted(true);
-        setShowWelcome(false); // Proceed after granting permissions
+        await AsyncStorage.setItem('permissionsGranted', 'true');
+        fadeOutAndContinue(true); // Move to the main page
       }
     } catch (error) {
       console.error('Error requesting permissions:', error);
@@ -86,13 +102,7 @@ const Home = ({ navigation }) => {
         <Text style={styles.title}>Welcome to My App Analysis Application</Text>
         <Button
           title="Continue"
-          onPress={() => {
-            if (permissionsGranted) {
-              setShowWelcome(false); // Skip permissions setup and go to main page
-            } else {
-              setShowWelcome(false); // Proceed to permission request
-            }
-          }}
+          onPress={() => fadeOutAndContinue(permissionsGranted)}
           color="#6200EE"
         />
       </Animated.View>
@@ -109,7 +119,7 @@ const Home = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: nextScreenFadeAnim }]}>
       <Text style={styles.title}>Main Page</Text>
       <Text style={styles.subtitle}>Manage permissions and navigate seamlessly</Text>
       <View style={styles.buttonContainer}>
@@ -119,7 +129,7 @@ const Home = ({ navigation }) => {
         <View style={styles.spacing} />
         <Button title="Test Bridge" onPress={() => navigation.navigate('TestBridge')} color="#6200EE" />
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
