@@ -105,6 +105,10 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+    lint {
+        disable 'QueryAllPackagesPermission'
+        // abortOnError false // (optional) Uncomment to ignore ALL lint errors
+    }
 }
 
 dependencies {

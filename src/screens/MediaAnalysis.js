@@ -1,31 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { NativeModules } from 'react-native';
 
 const { NativeModule } = NativeModules;
 
 const MediaAnalysis = () => {
   const [mediaData, setMediaData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchMediaAnalysis = async () => {
       try {
         const result = await NativeModule.getDetailedMediaAnalysis();
-        console.log('Media Analysis Result:', result); // Log the result
-        setMediaData(result); // Save result in state
+        console.log('Media Analysis Result:', result);
+        setMediaData(result);
       } catch (error) {
         console.error('Error fetching media analysis:', error);
         Alert.alert('Error', 'Failed to fetch media analysis.');
+      } finally {
+        setLoading(false); // Ensure loading is set to false after fetching
       }
     };
 
     fetchMediaAnalysis();
   }, []);
 
-  if (!mediaData) {
+  if (loading) {
     return (
       <View style={styles.container}>
-        <Text>Loading media analysis...</Text>
+        <ActivityIndicator size="large" color="#6200EE" />
+        <Text style={styles.loadingText}>Fetching media analysis...</Text>
       </View>
     );
   }
@@ -56,6 +60,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     marginBottom: 10,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
 });
 
