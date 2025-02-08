@@ -18,7 +18,7 @@ const MediaAnalysis = () => {
         console.error('Error fetching media analysis:', error);
         Alert.alert('Error', 'Failed to fetch media analysis.');
       } finally {
-        setLoading(false); // Ensure loading is set to false after fetching
+        setLoading(false);
       }
     };
 
@@ -37,12 +37,17 @@ const MediaAnalysis = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Media Storage Analysis</Text>
-      <Text style={styles.data}>Images Size: {mediaData.imagesSize} MB</Text>
-      <Text style={styles.data}>Videos Size: {mediaData.videosSize} MB</Text>
+      <Text style={styles.data}>
+        Images Size: {mediaData.imagesSize.toFixed(2)} MB
+      </Text>
+      <Text style={styles.data}>
+        Videos Size: {mediaData.videosSize.toFixed(2)} MB
+      </Text>
       <Text style={styles.data}>Message: {mediaData.message}</Text>
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

@@ -13,10 +13,10 @@ const AppAnalysis = () => {
     const fetchApps = async () => {
       try {
         const appsData = await NativeModule.getInstalledApps();
-        console.log('Raw Apps Data:', appsData);
+        //console.log('Raw Apps Data:', appsData);
 
         const appsArray = appsData.split('\n').filter(line => line.trim() !== '');
-        console.log('Parsed Apps Array:', appsArray);
+        //console.log('Parsed Apps Array:', appsArray);
 
         let total = 0;
         const appsList = appsArray.map(line => {
