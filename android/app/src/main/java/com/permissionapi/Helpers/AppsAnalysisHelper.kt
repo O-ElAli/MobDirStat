@@ -25,14 +25,19 @@ class AppsAnalysisHelper(private val context: Context) {
             val appName = pm.getApplicationLabel(app).toString()
             val packageName = app.packageName
             val appSize = getAppSizeInBytes(packageName)
-            appDetailsList.add(Pair("$appName ($packageName)", appSize))
+            
+            // Use a unique delimiter that won't appear in app names
+            appDetailsList.add(Pair("$appName|||$packageName", appSize))
         }
-
+    
         appDetailsList.sortByDescending { it.second }
-
+    
         val appDetails = StringBuilder()
-        for ((app, size) in appDetailsList) {
-            appDetails.append("$app: ${size / (1024 * 1024)} MB\n")
+        for ((appInfo, size) in appDetailsList) {
+            // Skip apps with 0 size
+            if (size > 0) {
+                appDetails.append("$appInfo:${size / (1024 * 1024)}\n")
+            }
         }
         return appDetails.toString()
     }

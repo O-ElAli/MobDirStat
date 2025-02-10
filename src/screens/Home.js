@@ -126,8 +126,6 @@ const Home = ({ navigation }) => {
         <Button title="App Analysis" onPress={() => navigation.navigate('App Analysis')} color="#BB86FC" />
         <View style={styles.spacing} />
         <Button title="Media Analysis" onPress={() => navigation.navigate('Media Analysis')} color="#FF0266" />
-        <View style={styles.spacing} />
-        <Button title="Test Bridge" onPress={() => navigation.navigate('TestBridge')} color="#6200EE" />
       </View>
     </Animated.View>
   );
