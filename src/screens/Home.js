@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { View, Button, StyleSheet, Alert, PermissionsAndroid, Platform, Text, Animated, ActivityIndicator } from 'react-native';
+import { 
+  View, Button, StyleSheet, Alert, PermissionsAndroid, 
+  Platform, Text, Animated, ActivityIndicator 
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeModules } from 'react-native';
 
 const { NativeModule } = NativeModules;
 
 const Home = ({ navigation }) => {
-  const [fadeAnim] = useState(new Animated.Value(0)); // Fade animation for current screen
-  const [nextScreenFadeAnim] = useState(new Animated.Value(0)); // Fade animation for next screen
+  const [fadeAnim] = useState(new Animated.Value(0)); 
+  const [nextScreenFadeAnim] = useState(new Animated.Value(0)); 
   const [loading, setLoading] = useState(true);
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [currentScreen, setCurrentScreen] = useState("welcome"); 
   const [permissionsGranted, setPermissionsGranted] = useState(false);
 
   useEffect(() => {
@@ -33,23 +36,22 @@ const Home = ({ navigation }) => {
     if (!loading) {
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 500, // Smooth fade-in effect
+        duration: 500, 
         useNativeDriver: true,
       }).start();
     }
   }, [loading]);
 
-  const fadeOutAndContinue = (nextStep) => {
+  const fadeOutAndContinue = (nextScreen) => {
     Animated.timing(fadeAnim, {
       toValue: 0,
-      duration: 500, // Fade-out animation matches fade-in
+      duration: 500, 
       useNativeDriver: true,
     }).start(() => {
-      setShowWelcome(false);
-      setPermissionsGranted(nextStep);
+      setCurrentScreen(nextScreen);
       Animated.timing(nextScreenFadeAnim, {
         toValue: 1,
-        duration: 500, // Smooth fade-in for the next screen
+        duration: 500, 
         useNativeDriver: true,
       }).start();
     });
@@ -62,7 +64,8 @@ const Home = ({ navigation }) => {
 
       if (usageStatsGranted && mediaPermissions) {
         await AsyncStorage.setItem('permissionsGranted', 'true');
-        fadeOutAndContinue(true); // Move to the main page
+        setPermissionsGranted(true);
+        fadeOutAndContinue("main"); 
       }
     } catch (error) {
       console.error('Error requesting permissions:', error);
@@ -96,23 +99,39 @@ const Home = ({ navigation }) => {
     );
   }
 
-  if (showWelcome) {
+  if (currentScreen === "welcome") {
     return (
       <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
         <Text style={styles.title}>Welcome to My App Analysis Application</Text>
         <Button
           title="Continue"
-          onPress={() => fadeOutAndContinue(permissionsGranted)}
+          onPress={() => fadeOutAndContinue("explanation")}
           color="#6200EE"
         />
       </Animated.View>
     );
   }
 
-  if (!permissionsGranted) {
+  if (currentScreen === "explanation") {
     return (
-      <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-        <Text style={styles.title}>Requesting Permissions...</Text>
+      <Animated.View style={[styles.container, { opacity: nextScreenFadeAnim }]}>
+        <Text style={styles.title}>Why We Need Permissions</Text>
+        <Text style={styles.subtitle}>
+          We require access to your app usage and media files to provide accurate analysis.
+        </Text>
+        <Button
+          title="Proceed to Permissions"
+          onPress={() => fadeOutAndContinue("permissions")}
+          color="#6200EE"
+        />
+      </Animated.View>
+    );
+  }
+
+  if (currentScreen === "permissions") {
+    return (
+      <Animated.View style={[styles.container, { opacity: nextScreenFadeAnim }]}>
+        <Text style={styles.title}>Grant Permissions</Text>
         <Button title="Grant Permissions" onPress={requestPermissions} color="#6200EE" />
       </Animated.View>
     );

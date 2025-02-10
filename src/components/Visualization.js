@@ -9,7 +9,7 @@ const Visualization = ({ apps, width, height }) => {
   const [forceUpdate, setForceUpdate] = useState(0);
   const [selectedApp, setSelectedApp] = useState(null);
 
-  console.log("🔍 Received apps in Visualization:", apps.length, "apps");
+  //console.log("🔍 Received apps in Visualization:", apps.length, "apps");
 
   if (!Array.isArray(apps) || apps.length === 0) {
     console.error("⚠️ Apps array is invalid:", apps);
@@ -29,7 +29,7 @@ const Visualization = ({ apps, width, height }) => {
         .padding(1) // Ensuring full coverage
         .round(true)(root);
 
-      console.log("✅ Treemap generated with", root.leaves().length, "nodes");
+      //console.log("✅ Treemap generated with", root.leaves().length, "nodes");
 
       return root.leaves();
     } catch (error) {
@@ -77,7 +77,7 @@ const Visualization = ({ apps, width, height }) => {
           const h = leaf.y1 - leaf.y0;
           const isSelected = selectedApp === appName;
 
-          console.log(`🟪 Drawing ${appName} at [${leaf.x0}, ${leaf.y0}, ${w}, ${h}]`);
+          //console.log(`🟪 Drawing ${appName} at [${leaf.x0}, ${leaf.y0}, ${w}, ${h}]`);
 
           return (
             <G

@@ -26,7 +26,7 @@ const AppAnalysis = () => {
     const fetchApps = async () => {
       try {
         const appsData = await NativeModule.getInstalledApps();
-        console.log("Raw appsData:", appsData);
+        // console.log("Raw appsData:", appsData);
     
         if (typeof appsData !== "string") {
           console.error("Error: Expected a string from NativeModule.getInstalledApps, got:", typeof appsData);
