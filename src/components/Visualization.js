@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ActivityIndicator, Alert, Pressable } from 'react-native';
 import Svg, { Rect, G } from 'react-native-svg';
 import { treemap, hierarchy } from 'd3-hierarchy';
 import PropTypes from 'prop-types';
@@ -16,6 +16,8 @@ const Visualization = ({ apps, width, height }) => {
     return <Text style={{ color: 'red', fontSize: 16 }}>No valid data for visualization.</Text>;
   }
 
+  const totalSize = apps.reduce((sum, app) => sum + (app.size || 0), 0);
+
   const leaves = useMemo(() => {
     try {
       const root = hierarchy({ children: apps })
@@ -24,13 +26,12 @@ const Visualization = ({ apps, width, height }) => {
 
       treemap()
         .size([width, height])
-        .paddingInner(3)
-        .paddingOuter(3)
+        .padding(1) // Ensuring full coverage
         .round(true)(root);
 
       console.log("✅ Treemap generated with", root.leaves().length, "nodes");
 
-      return root.leaves().filter(leaf => leaf.x1 - leaf.x0 > 5 && leaf.y1 - leaf.y0 > 5);
+      return root.leaves();
     } catch (error) {
       console.error("❌ Treemap error:", error);
       return [];
@@ -60,38 +61,49 @@ const Visualization = ({ apps, width, height }) => {
   }
 
   return (
-    <Svg width={width} height={height} style={{ borderWidth: 1, borderColor: 'black' }} key={forceUpdate}>
-      {leaves.map((leaf, index) => {
-        const appName = leaf.data.name;
-        const w = leaf.x1 - leaf.x0;
-        const h = leaf.y1 - leaf.y0;
-        const isSelected = selectedApp === appName;
+    <Pressable
+      style={{ width, height }}
+      onPress={() => {
+        console.log("🟢 Clicked outside, deselecting...");
+        setSelectedApp(null);
+      }}
+    >
+      <Svg width={width} height={height} style={{ borderWidth: 1, borderColor: 'black' }} key={forceUpdate}>
+        {leaves.map((leaf, index) => {
+          const appName = leaf.data.name;
+          const appSize = leaf.data.size;
+          const percentage = ((appSize / totalSize) * 100).toFixed(2);
+          const w = leaf.x1 - leaf.x0;
+          const h = leaf.y1 - leaf.y0;
+          const isSelected = selectedApp === appName;
 
-        console.log(`🟪 Drawing ${appName} at [${leaf.x0}, ${leaf.y0}, ${w}, ${h}]`);
+          console.log(`🟪 Drawing ${appName} at [${leaf.x0}, ${leaf.y0}, ${w}, ${h}]`);
 
-        return (
-          <G
-            key={index}
-            pointerEvents="auto" // Fix: changed from "all" to "auto"
-            onPressIn={() => {
-              setSelectedApp(appName);
-              Alert.alert("App Selected", `App Name: ${appName}`);
-            }}
-          >
-            <Rect
-              x={leaf.x0}
-              y={leaf.y0}
-              width={w}
-              height={h}
-              fill="#BB86FC"
-              stroke={isSelected ? "#FFFFFF" : "#6200EE"} // White border when selected
-              strokeWidth={isSelected ? 3 : 2}
-              opacity={0.9}
-            />
-          </G>
-        );
-      })}
-    </Svg>
+          return (
+            <G
+              key={index}
+              pointerEvents="auto"
+              onPressIn={(e) => {
+                e.stopPropagation(); // Prevents deselection when clicking a square
+                setSelectedApp(appName);
+                Alert.alert("App Selected", `App: ${appName}\nSize: ${appSize} MB\nSpace Taken: ${percentage}%`);
+              }}
+            >
+              <Rect
+                x={leaf.x0}
+                y={leaf.y0}
+                width={w}
+                height={h}
+                fill="#BB86FC" // Keeps the purple/pink fill
+                stroke={isSelected ? "#FFFFFF" : "#6200EE"} // White outline when selected
+                strokeWidth={isSelected ? 3 : 2} // Slightly thicker border when selected
+                opacity={0.9}
+              />
+            </G>
+          );
+        })}
+      </Svg>
+    </Pressable>
   );
 };
 
