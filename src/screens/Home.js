@@ -20,7 +20,7 @@ const Home = ({ navigation }) => {
       try {
         const storedPermissionStatus = await AsyncStorage.getItem('permissionsGranted');
         if (storedPermissionStatus === 'true') {
-          setPermissionsGranted(true);
+          setPermissionsGranted(true); 
         }
       } catch (error) {
         console.error('Error checking stored permissions:', error);
@@ -105,7 +105,7 @@ const Home = ({ navigation }) => {
         <Text style={styles.title}>Welcome to My App Analysis Application</Text>
         <Button
           title="Continue"
-          onPress={() => fadeOutAndContinue("explanation")}
+          onPress={() => fadeOutAndContinue(permissionsGranted ? "main" : "explanation")}
           color="#6200EE"
         />
       </Animated.View>
