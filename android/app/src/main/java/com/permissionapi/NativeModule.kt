@@ -56,7 +56,7 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
         } catch (e: Exception) {
             promise.reject("APP_ERROR", "Failed to fetch installed apps", e)
         }
-    }
+    }    
 
     @ReactMethod
     fun getDetailedMediaAnalysis(promise: Promise) {
