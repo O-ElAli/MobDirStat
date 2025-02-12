@@ -5,7 +5,8 @@ import {
   StyleSheet, 
   ActivityIndicator, 
   Alert, 
-  useWindowDimensions 
+  useWindowDimensions, 
+  Animated 
 } from 'react-native';
 import { NativeModules } from 'react-native';
 import Visualization from '../components/Visualization';
@@ -17,8 +18,11 @@ const AppAnalysis = () => {
   const [totalStorage, setTotalStorage] = useState(0);
   const [loading, setLoading] = useState(true);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-
+  
   const visHeight = windowHeight * 0.6; // 60% of screen height
+
+  // Animated fade-out effect for legend
+  const legendOpacity = useState(new Animated.Value(1))[0];
 
   useEffect(() => {
     const fetchApps = async () => {
@@ -67,6 +71,16 @@ const AppAnalysis = () => {
     };
 
     fetchApps();
+
+    // Start fading out the legend after 5 seconds
+    setTimeout(() => {
+      Animated.timing(legendOpacity, {
+        toValue: 0,
+        duration: 1000, // 1 second fade-out
+        useNativeDriver: true,
+      }).start();
+    }, 5000);
+
   }, []);
 
   if (loading) {
@@ -105,11 +119,12 @@ const AppAnalysis = () => {
         />
       </View>
 
-      <View style={styles.legend}>
+      {/* Animated Legend - Fades out after 5 seconds */}
+      <Animated.View style={[styles.legend, { opacity: legendOpacity }]}>
         <Text style={styles.legendText}>
           Color Intensity = App Size (Darker = Larger)
         </Text>
-      </View>
+      </Animated.View>
     </View>
   );
 };
@@ -156,6 +171,9 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#e9ecef',
     borderRadius: 5,
+    position: "absolute",
+    bottom: 20, // Keeps it above the visualization
+    alignSelf: "center",
   },
   legendText: {
     fontSize: 12,
