@@ -3,7 +3,6 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  ScrollView, 
   ActivityIndicator, 
   Alert, 
   useWindowDimensions 
@@ -18,16 +17,13 @@ const AppAnalysis = () => {
   const [totalStorage, setTotalStorage] = useState(0);
   const [loading, setLoading] = useState(true);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  
-  const visWidth = windowWidth - 40;
-  const visHeight = windowHeight * 0.5;
+
+  const visHeight = windowHeight * 0.6; // 60% of screen height
 
   useEffect(() => {
     const fetchApps = async () => {
       try {
         const appsData = await NativeModule.getInstalledApps();
-        // console.log("Raw appsData:", appsData);
-    
         if (typeof appsData !== "string") {
           console.error("Error: Expected a string from NativeModule.getInstalledApps, got:", typeof appsData);
           return;
@@ -43,7 +39,6 @@ const AppAnalysis = () => {
             const appInfo = line.substring(0, lastColonIndex).trim();
             const sizePart = line.substring(lastColonIndex + 1).trim();
             
-            // Add validation for the delimiter
             const appParts = appInfo.split('|||').map(s => s.trim());
             if (appParts.length !== 2) return null;
 
@@ -92,58 +87,62 @@ const AppAnalysis = () => {
   }
   
   return (
-    <ScrollView 
-      contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={styles.title}>Installed Apps Analysis</Text>
-      <Text style={styles.data}>
-        Total Storage: {totalStorage} MB ({apps.length} apps)
-      </Text>
+    <View style={styles.container}>
+      {/* Top 40% - Title & Summary */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.title}>Installed Apps Analysis</Text>
+        <Text style={styles.data}>
+          Total Storage: {totalStorage} MB ({apps.length} apps)
+        </Text>
+      </View>
 
-      <Visualization 
-        apps={apps.filter(app => app.size > 1)} 
-        width={visWidth}
-        height={visHeight}
-      />
-      
+      {/* Bottom 60% - Visualization */}
+      <View style={styles.visualizationContainer}>
+        <Visualization 
+          apps={apps.filter(app => app.size > 1)} 
+          width={windowWidth}
+          height={visHeight}
+        />
+      </View>
+
       <View style={styles.legend}>
         <Text style={styles.legendText}>
           Color Intensity = App Size (Darker = Larger)
         </Text>
       </View>
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
+    backgroundColor: '#020203',
     padding: 20,
+  },
+  infoContainer: {
+    flex: 0.4, // 40% of the screen height
+    justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 15,
-    color: '#333',
+    color: '#ebd8d8',
   },
   data: {
     fontSize: 16,
-    marginBottom: 25,
-    color: '#666',
+    marginBottom: 10,
+    color: '#ccc',
   },
-  svgContainer: {
-    borderRadius: 10,
-    backgroundColor: '#f8f9fa',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+  visualizationContainer: {
+    flex: 0.6, // 60% of the screen height
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingText: {
-    marginTop: 15,
+    marginTop: 10,
     fontSize: 16,
     color: '#888',
   },
@@ -153,7 +152,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   legend: {
-    marginTop: 20,
+    marginTop: 10,
     padding: 10,
     backgroundColor: '#e9ecef',
     borderRadius: 5,

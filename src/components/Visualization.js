@@ -3,20 +3,24 @@ import { View, Text, ActivityIndicator, Alert, Pressable } from 'react-native';
 import Svg, { Rect, G } from 'react-native-svg';
 import { treemap, hierarchy } from 'd3-hierarchy';
 import PropTypes from 'prop-types';
+import * as d3 from 'd3-scale'; // Import d3-scale for color mapping
 
 const Visualization = ({ apps, width, height }) => {
   const [loading, setLoading] = useState(true);
   const [forceUpdate, setForceUpdate] = useState(0);
   const [selectedApp, setSelectedApp] = useState(null);
 
-  //console.log("🔍 Received apps in Visualization:", apps.length, "apps");
-
   if (!Array.isArray(apps) || apps.length === 0) {
-    console.error("⚠️ Apps array is invalid:", apps);
     return <Text style={{ color: 'red', fontSize: 16 }}>No valid data for visualization.</Text>;
   }
 
   const totalSize = apps.reduce((sum, app) => sum + (app.size || 0), 0);
+  const maxAppSize = Math.max(...apps.map(app => app.size)); // Find the largest app size
+
+  // Define a color scale from light purple (small apps) to dark purple (large apps)
+  const colorScale = d3.scaleLinear()
+    .domain([0, maxAppSize])  // Map size from 0 to max size
+    .range(["#D3BDF2", "#6200EE"]); // Light purple to dark purple
 
   const leaves = useMemo(() => {
     try {
@@ -26,10 +30,8 @@ const Visualization = ({ apps, width, height }) => {
 
       treemap()
         .size([width, height])
-        .padding(1) // Ensuring full coverage
+        .padding(2)
         .round(true)(root);
-
-      //console.log("✅ Treemap generated with", root.leaves().length, "nodes");
 
       return root.leaves();
     } catch (error) {
@@ -56,35 +58,22 @@ const Visualization = ({ apps, width, height }) => {
     );
   }
 
-  if (leaves.length === 0) {
-    return <Text style={{ color: 'red', fontSize: 16 }}>Treemap failed to generate.</Text>;
-  }
-
   return (
     <Pressable
       style={{ width, height }}
-      onPress={() => {
-        console.log("🟢 Clicked outside, deselecting...");
-        setSelectedApp(null);
-      }}
+      onPress={() => setSelectedApp(null)}
     >
-      <Svg width={width} height={height} style={{ borderWidth: 1, borderColor: 'black' }} key={forceUpdate}>
+      <Svg width={width} height={height} key={forceUpdate}>
         {leaves.map((leaf, index) => {
           const appName = leaf.data.name;
           const appSize = leaf.data.size;
           const percentage = ((appSize / totalSize) * 100).toFixed(2);
-          const w = leaf.x1 - leaf.x0;
-          const h = leaf.y1 - leaf.y0;
           const isSelected = selectedApp === appName;
-
-          //console.log(`🟪 Drawing ${appName} at [${leaf.x0}, ${leaf.y0}, ${w}, ${h}]`);
 
           return (
             <G
               key={index}
-              pointerEvents="auto"
-              onPressIn={(e) => {
-                e.stopPropagation(); // Prevents deselection when clicking a square
+              onPressIn={() => {
                 setSelectedApp(appName);
                 Alert.alert("App Selected", `App: ${appName}\nSize: ${appSize} MB\nSpace Taken: ${percentage}%`);
               }}
@@ -92,11 +81,11 @@ const Visualization = ({ apps, width, height }) => {
               <Rect
                 x={leaf.x0}
                 y={leaf.y0}
-                width={w}
-                height={h}
-                fill="#BB86FC" // Keeps the purple/pink fill
-                stroke={isSelected ? "#FFFFFF" : "#6200EE"} // White outline when selected
-                strokeWidth={isSelected ? 3 : 2} // Slightly thicker border when selected
+                width={leaf.x1 - leaf.x0}
+                height={leaf.y1 - leaf.y0}
+                fill={colorScale(appSize)} // Set color intensity based on app size
+                stroke={isSelected ? "#FFFFFF" : "#6200EE"}
+                strokeWidth={isSelected ? 3 : 2}
                 opacity={0.9}
               />
             </G>
