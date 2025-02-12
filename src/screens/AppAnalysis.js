@@ -19,7 +19,7 @@ const AppAnalysis = () => {
   const [loading, setLoading] = useState(true);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   
-  const visHeight = windowHeight * 0.6; // 60% of screen height
+  const visHeight = windowHeight * 0.6;
 
   // Animated fade-out effect for legend
   const legendOpacity = useState(new Animated.Value(1))[0];
@@ -28,33 +28,22 @@ const AppAnalysis = () => {
     const fetchApps = async () => {
       try {
         const appsData = await NativeModule.getInstalledApps();
-        if (typeof appsData !== "string") {
-          console.error("Error: Expected a string from NativeModule.getInstalledApps, got:", typeof appsData);
+        if (!Array.isArray(appsData)) {
+          console.error("Error: Expected an array from NativeModule.getInstalledApps, got:", typeof appsData);
           return;
         }    
-        const appsArray = appsData.split('\n').filter(line => line.trim() !== '');
-    
+
         let total = 0;
-        const appsList = appsArray
-          .map(line => {
-            const lastColonIndex = line.lastIndexOf(':');
-            if (lastColonIndex === -1) return null;
+        const appsList = appsData
+          .map(app => {
+            if (!app.name || !app.packageName || isNaN(app.size)) return null;
 
-            const appInfo = line.substring(0, lastColonIndex).trim();
-            const sizePart = line.substring(lastColonIndex + 1).trim();
-            
-            const appParts = appInfo.split('|||').map(s => s.trim());
-            if (appParts.length !== 2) return null;
-
-            const [appName, packageName] = appParts;
-            const sizeMB = parseFloat(sizePart);
-
-            if (isNaN(sizeMB) || sizeMB <= 0) return null;
-
-            total += sizeMB;
+            total += app.size;
             return { 
-              name: `${appName} (${packageName})`, 
-              size: sizeMB 
+              name: app.name,
+              packageName: app.packageName,
+              size: app.size,
+              icon: app.icon || "" // Use base64 icon
             };
           })
           .filter(Boolean)
@@ -72,11 +61,10 @@ const AppAnalysis = () => {
 
     fetchApps();
 
-    // Start fading out the legend after 5 seconds
     setTimeout(() => {
       Animated.timing(legendOpacity, {
         toValue: 0,
-        duration: 1000, // 1 second fade-out
+        duration: 1000,
         useNativeDriver: true,
       }).start();
     }, 5000);
@@ -102,7 +90,6 @@ const AppAnalysis = () => {
   
   return (
     <View style={styles.container}>
-      {/* Top 40% - Title & Summary */}
       <View style={styles.infoContainer}>
         <Text style={styles.title}>Installed Apps Analysis</Text>
         <Text style={styles.data}>
@@ -110,7 +97,6 @@ const AppAnalysis = () => {
         </Text>
       </View>
 
-      {/* Bottom 60% - Visualization */}
       <View style={styles.visualizationContainer}>
         <Visualization 
           apps={apps.filter(app => app.size > 1)} 
@@ -118,16 +104,10 @@ const AppAnalysis = () => {
           height={visHeight}
         />
       </View>
-
-      {/* Animated Legend - Fades out after 5 seconds */}
-      <Animated.View style={[styles.legend, { opacity: legendOpacity }]}>
-        <Text style={styles.legendText}>
-          Color Intensity = App Size (Darker = Larger)
-        </Text>
-      </Animated.View>
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -171,9 +151,9 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#e9ecef',
     borderRadius: 5,
-    position: "absolute",
+    position: 'absolute',
     bottom: 20, // Keeps it above the visualization
-    alignSelf: "center",
+    alignSelf: 'center',
   },
   legendText: {
     fontSize: 12,

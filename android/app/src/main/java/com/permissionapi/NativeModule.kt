@@ -51,8 +51,8 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
     fun getInstalledApps(promise: Promise) {
         try {
             val appsHelper = AppsAnalysisHelper(reactApplicationContext)
-            val appsAnalysis = appsHelper.getInstalledAppsWithSizes()
-            promise.resolve(appsAnalysis)
+            val appsList = appsHelper.getInstalledAppsWithSizes()
+            promise.resolve(appsList)
         } catch (e: Exception) {
             promise.reject("APP_ERROR", "Failed to fetch installed apps", e)
         }

@@ -1,8 +1,14 @@
 package com.permissionapi.helpers
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Base64
+import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.WritableArray
+import com.facebook.react.bridge.WritableMap
+import java.io.ByteArrayOutputStream
 
 class AppsAnalysisHelper(private val context: Context) {
 
@@ -16,30 +22,29 @@ class AppsAnalysisHelper(private val context: Context) {
         return mode == android.app.AppOpsManager.MODE_ALLOWED
     }
 
-    fun getInstalledAppsWithSizes(): String {
+    fun getInstalledAppsWithSizes(): WritableArray {
         val pm: PackageManager = context.packageManager
         val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-        val appDetailsList = mutableListOf<Pair<String, Long>>()
+        val appList = Arguments.createArray()
 
         for (app in apps) {
             val appName = pm.getApplicationLabel(app).toString()
             val packageName = app.packageName
             val appSize = getAppSizeInBytes(packageName)
-            
-            // Use a unique delimiter that won't appear in app names
-            appDetailsList.add(Pair("$appName|||$packageName", appSize))
-        }
-    
-        appDetailsList.sortByDescending { it.second }
-    
-        val appDetails = StringBuilder()
-        for ((appInfo, size) in appDetailsList) {
-            // Skip apps with 0 size
-            if (size > 0) {
-                appDetails.append("$appInfo:${size / (1024 * 1024)}\n")
+            val appIconBase64 = getAppIconBase64(app, pm) // Get base64 icon
+
+            if (appSize > 0) {
+                val appData = Arguments.createMap()
+                appData.putString("name", appName)
+                appData.putString("packageName", packageName)
+                appData.putDouble("size", appSize / (1024.0 * 1024.0)) // Convert to MB
+                appData.putString("icon", appIconBase64) // Set base64 app icon
+
+                appList.pushMap(appData)
             }
         }
-        return appDetails.toString()
+
+        return appList
     }
 
     private fun getAppSizeInBytes(packageName: String): Long {
@@ -62,6 +67,29 @@ class AppsAnalysisHelper(private val context: Context) {
             }
         } catch (e: Exception) {
             0L
+        }
+    }
+
+    private fun getAppIconBase64(app: ApplicationInfo, pm: PackageManager): String {
+        return try {
+            val drawable = pm.getApplicationIcon(app.packageName)
+            val bitmap = android.graphics.Bitmap.createBitmap(
+                drawable.intrinsicWidth,
+                drawable.intrinsicHeight,
+                android.graphics.Bitmap.Config.ARGB_8888
+            )
+
+            val canvas = android.graphics.Canvas(bitmap)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+
+            val outputStream = ByteArrayOutputStream()
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, outputStream)
+            val byteArray = outputStream.toByteArray()
+
+            "data:image/png;base64," + Base64.encodeToString(byteArray, Base64.DEFAULT)
+        } catch (e: Exception) {
+            ""
         }
     }
 }
