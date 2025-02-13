@@ -8,10 +8,12 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Build
 import android.util.Base64
+import android.util.Log
 import android.os.Process
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableArray
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 class AppsAnalysisHelper(private val context: Context) {
 
@@ -33,7 +35,7 @@ class AppsAnalysisHelper(private val context: Context) {
      */
     fun getInstalledAppsWithSizes(): WritableArray {
         val pm: PackageManager = context.packageManager
-        val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+        val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA or PackageManager.MATCH_SYSTEM_ONLY)
         val appList = Arguments.createArray()
 
         for (app in apps) {
@@ -54,13 +56,15 @@ class AppsAnalysisHelper(private val context: Context) {
                     appData.putString("icon", appIconBase64)
 
                     appList.pushMap(appData)
+                } else {
+                    Log.w("AppsAnalysisHelper", "Skipped app: $packageName (size 0)")
                 }
             } catch (e: Exception) {
-                // Log the error but continue processing other apps
-                e.printStackTrace()
+                Log.e("AppsAnalysisHelper", "Error processing app: ${app.packageName}", e)
             }
         }
 
+        Log.d("AppsAnalysisHelper", "Total apps analyzed: ${appList.size()}")
         return appList
     }
 
@@ -69,26 +73,49 @@ class AppsAnalysisHelper(private val context: Context) {
      */
     private fun getAppSizeInBytes(packageName: String): Long {
         return try {
+            var totalSize: Long = 0
+    
+            // ✅ Get app size using StorageStatsManager (Android 8+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val storageStatsManager = context.getSystemService(Context.STORAGE_STATS_SERVICE) as android.app.usage.StorageStatsManager
-                val storageManager = context.getSystemService(Context.STORAGE_SERVICE) as android.os.storage.StorageManager
-                val uuid = storageManager.getUuidForPath(context.filesDir)
-                val storageStats = storageStatsManager.queryStatsForPackage(uuid, packageName, Process.myUserHandle())
-                storageStats.appBytes
-            } else {
+                try {
+                    val storageStatsManager = context.getSystemService(Context.STORAGE_STATS_SERVICE) as android.app.usage.StorageStatsManager
+                    val storageManager = context.getSystemService(Context.STORAGE_SERVICE) as android.os.storage.StorageManager
+                    val uuid = storageManager.getUuidForPath(context.filesDir)
+                    val storageStats = storageStatsManager.queryStatsForPackage(uuid, packageName, Process.myUserHandle())
+    
+                    totalSize += storageStats.appBytes
+                    Log.d("AppSize", "Package: $packageName, StorageStats Size: ${storageStats.appBytes} bytes (${storageStats.appBytes / (1024.0 * 1024.0)} MB)")
+                } catch (e: Exception) {
+                    Log.e("AppSize", "Error retrieving StorageStats for $packageName", e)
+                }
+            }
+    
+            // ✅ Fallback: Get APK file size
+            try {
                 val packageInfo = context.packageManager.getPackageInfo(packageName, 0)
                 val sourceDir = packageInfo.applicationInfo?.sourceDir
                 if (sourceDir != null) {
-                    val file = java.io.File(sourceDir)
-                    file.length()
-                } else {
-                    0L
+                    val file = File(sourceDir)
+                    totalSize += file.length()
+                    Log.d("AppSize", "Package: $packageName, APK File Size: ${file.length()} bytes (${file.length() / (1024.0 * 1024.0)} MB)")
                 }
+            } catch (e: Exception) {
+                Log.e("AppSize", "Error retrieving APK size for $packageName", e)
             }
+    
+            // ✅ Prevent invalid size inflation
+            if (totalSize < 1_000 || totalSize > 100_000_000_000L) { // Ignore sizes <1KB or >100GB
+                Log.e("AppSize", "Invalid size detected for $packageName: $totalSize bytes. Resetting to 0.")
+                return 0L
+            }
+    
+            return totalSize
         } catch (e: Exception) {
-            0L
+            Log.e("AppSize", "Error fetching size for $packageName", e)
+            return 0L
         }
     }
+    
 
     /**
      * Converts an app icon to a Base64 string for React Native.

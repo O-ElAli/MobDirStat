@@ -15,8 +15,8 @@ const AppDetailsModal = ({ visible, app, onClose }) => {
           )}
           <Text style={styles.appName}>{app.name}</Text>
           <Text style={styles.appDetails}>
-            Size: {app.size} MB {"\n"}
-            Space Taken: {app.percentage}%
+            Size: {app.size || 'Unknown'} MB {"\n"}
+            Space Taken: {app.percentage !== undefined ? app.percentage : 'N/A'}%
           </Text>
           <Pressable style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeText}>Close</Text>
