@@ -4,7 +4,7 @@ import Svg, { Rect, G } from 'react-native-svg';
 import { treemap, hierarchy } from 'd3-hierarchy';
 import PropTypes from 'prop-types';
 import * as d3 from 'd3-scale';
-import AppDetailsModal from './AppDetailsModal'; // Import the new modal component
+import AppDetailsModal from './AppDetailsModal';
 
 const Visualization = ({ apps, filesystemStorage, systemStorage, width, height }) => {
   const [loading, setLoading] = useState(true);
@@ -15,103 +15,113 @@ const Visualization = ({ apps, filesystemStorage, systemStorage, width, height }
     return <Text style={{ color: 'red', fontSize: 16 }}>No valid data for visualization.</Text>;
   }
 
-  const totalSize = apps.reduce((sum, app) => sum + (app.size || 0), 0);
-  const maxAppSize = Math.max(...apps.map(app => app.size));
-
-  // Dynamic color scale: Larger apps are darker
+  const totalSize = apps.reduce((sum, app) => sum + (app.totalSize || 0), 0);
   const colorScale = d3.scaleOrdinal()
-  .domain(["Apps", "Filesystem", "System"])
-  .range(["#6200EE", "#FF9800", "#4CAF50"]);
+    .domain(["Apps", "Filesystem", "System"])
+    .range(["#6200EE", "#FF9800", "#4CAF50"]);
 
-
-  const leaves = useMemo(() => {
-    if (!apps.length && !filesystemStorage && !systemStorage) {
-      return [];
-    }
-  
+  // **✅ Correct Nested Treemap Hierarchy**
+  const root = useMemo(() => {
     try {
-      const root = hierarchy({
+      return hierarchy({
         name: "Storage",
         children: [
           {
             name: "Apps",
-            children: apps.length > 0 
+            children: apps.length > 0
               ? apps.map(app => ({
                   name: app.name,
                   packageName: app.packageName,
-                  size: app.totalSize || 1,
+                  size: parseFloat(app.totalSize) || 1,
                 }))
               : [{ name: "No Apps", size: 1 }]
           },
-          { name: "Filesystem", size: filesystemStorage || 1 }, 
-          { name: "System", size: systemStorage || 1 }
+          {
+            name: "Filesystem",
+            children: [
+              { name: "Filesystem Storage", size: parseFloat(filesystemStorage) || 1 }
+            ]
+          },
+          {
+            name: "System",
+            children: [
+              { name: "System Storage", size: parseFloat(systemStorage) || 1 }
+            ]
+          }
         ]
       })
       .sum(d => d.size || 1)
       .sort((a, b) => (b.value || 0) - (a.value || 0));
-      
-  
-      treemap()
-        .size([width, height])
-        .padding(2)
-        .round(true)(root);
-  
-      return root.leaves();
     } catch (error) {
-      console.error("❌ Treemap error:", error);
-      return [];
+      console.error("❌ Error in Treemap Hierarchy:", error);
+      return null;
     }
-  }, [apps, filesystemStorage, systemStorage, width, height]);
-  
+  }, [apps, filesystemStorage, systemStorage]);
+
+  const treemapLayout = treemap()
+    .size([width, height])
+    .round(true) // **🔴 Removed all padding**
+    .paddingOuter(0) 
+    .paddingInner(0); 
+
+  const nodes = useMemo(() => {
+    if (!root) return [];
+    treemapLayout(root);
+    return root.descendants();
+  }, [root]);
 
   useEffect(() => {
-    if (leaves.length > 0) {
+    if (nodes.length > 0) {
       setTimeout(() => {
         setLoading(false);
         setForceUpdate(prev => prev + 1);
       }, 500);
     }
-  }, [leaves]);
+  }, [nodes]);
 
   return (
     <View>
       <Pressable style={{ width, height }} onPress={() => setSelectedApp(null)}>
         <Svg width={width} height={height} key={forceUpdate}>
-          {leaves.map((leaf, index) => {
-            const isCategory = leaf.children; // Check if this is a category
+          {nodes.map((node, index) => {
+            const parentCategory = node.parent?.data?.name;
+            const isFilesystem = parentCategory === "Filesystem";
+            const isSystem = parentCategory === "System";
+
             return (
               <G
                 key={index}
                 onPressIn={() => {
-                  if (!isCategory) {
+                  if (node.depth > 1) { // Prevent clicking on categories
                     setSelectedApp({
-                      name: leaf.data.name,
-                      size: parseFloat(leaf.data.size.toFixed(2)),
-                      percentage: totalSize > 0 ? parseFloat(((leaf.data.size / totalSize) * 100).toFixed(2)) : 0,
+                      name: node.data.name,
+                      size: parseFloat(node.data.size.toFixed(2)),
+                      percentage: totalSize > 0 ? parseFloat(((node.data.size / totalSize) * 100).toFixed(2)) : 0,
                     });
                   }
                 }}
               >
                 <Rect
-                  x={leaf.x0}
-                  y={leaf.y0}
-                  width={leaf.x1 - leaf.x0}
-                  height={leaf.y1 - leaf.y0}
-                  fill={leaf.data.name === "Filesystem" ? "#FF9800" : 
-                        leaf.data.name === "System" ? "#4CAF50" : 
-                        isCategory ? "#888888" : colorScale(leaf.data.size)}
-                  stroke="#6200EE"
-                  strokeWidth={isCategory ? 3 : 2}
-                  opacity={isCategory ? 1 : 0.9}
+                  x={node.x0}
+                  y={node.y0}
+                  width={node.x1 - node.x0}
+                  height={node.y1 - node.y0}
+                  fill={
+                    isFilesystem ? "#FF9800" :
+                    isSystem ? "#4CAF50" :
+                    colorScale(node.data.size)
+                  }
+                  stroke={node.depth === 1 ? "#ffffff" : "#6200EE"} // Highlights category borders
+                  strokeWidth={node.depth === 1 ? 3 : 2}
+                  opacity={0.9}
                 />
               </G>
             );
           })}
-
         </Svg>
       </Pressable>
 
-      {/* Use the new AppDetailsModal component */}
+      {/* App Details Modal */}
       <AppDetailsModal 
         visible={!!selectedApp} 
         app={selectedApp} 

@@ -2,14 +2,19 @@ import React from 'react';
 import { View, Text, Modal, Pressable, Image, StyleSheet } from 'react-native';
 
 const formatStorageSize = (size) => {
-  if (size >= 1024) {
-    return `${(size / 1024).toFixed(1)} GB`; // GB with 1 decimal place
+  const numericSize = parseFloat(size); // Ensure it's a number
+  if (numericSize >= 1024) {
+    return { value: (numericSize / 1024).toFixed(1), unit: "GB" }; // GB with 1 decimal place
   }
-  return `${size.toFixed(2)} MB`; // MB with 2 decimal places
+  return { value: numericSize.toFixed(2), unit: "MB" }; // MB with 2 decimal places
 };
+
+
 
 const AppDetailsModal = ({ visible, app, onClose }) => {
   if (!app) return null;
+
+  const formattedSize = formatStorageSize(parseFloat(app.size));
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -22,11 +27,11 @@ const AppDetailsModal = ({ visible, app, onClose }) => {
           )}
           <Text style={styles.appName}>{app.name}</Text>
           <Text style={styles.appDetails}>
-            {app.name === "Filesystem" || app.name === "System" ? (
-              `Total Storage Used: ${app.size} MB`
-            ) : (
-              `Size: ${app.size} MB {"\n"} Space Taken: ${isFinite(app.percentage) ? app.percentage : "0"}%`
-            )}
+            {app.name === "Filesystem" || app.name === "System"
+              ? `Total Storage Used: ${formattedSize.value} ${formattedSize.unit}`
+              : `Size: ${formattedSize.value} ${formattedSize.unit} {"\n"} Space Taken: ${
+                  isFinite(parseFloat(app.percentage)) ? parseFloat(app.percentage) : "0"
+                  }%`}
           </Text>
           <Pressable style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeText}>Close</Text>
@@ -36,6 +41,7 @@ const AppDetailsModal = ({ visible, app, onClose }) => {
     </Modal>
   );
 };
+
 
 const styles = StyleSheet.create({
   modalContainer: {

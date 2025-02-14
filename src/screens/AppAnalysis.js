@@ -13,16 +13,21 @@ import Visualization from '../components/Visualization';
 
 const { NativeModule } = NativeModules;
 
+const formatStorageSize = (size) => {
+  if (size >= 1024) {
+    return `${(size / 1024).toFixed(1)} GB`; // GB with 1 decimal place
+  }
+  return `${size.toFixed(2)} MB`; // MB with 2 decimal places
+};
+
+
 const AppAnalysis = () => {
   const [apps, setApps] = useState([]);
-  const [totalStorage, setTotalStorage] = useState(0);
+  const [totalStorage, setTotalStorage] = useState({ apps: 0, filesystem: 0, system: 0 });
   const [loading, setLoading] = useState(true);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   
   const visHeight = windowHeight * 0.6;
-
-  // Animated fade-out effect for legend
-  const legendOpacity = useState(new Animated.Value(1))[0];
 
   useEffect(() => {
     const fetchStorageData = async () => {
@@ -63,9 +68,9 @@ const AppAnalysis = () => {
   
         setApps(appsList);
         setTotalStorage({
-          apps: totalAppStorage.toFixed(2),
-          filesystem: filesystemStorage.toFixed(2),
-          system: systemStorage.toFixed(2),
+          apps: totalAppStorage,
+          filesystem: filesystemStorage,
+          system: systemStorage,
         });
   
       } catch (error) {
@@ -96,15 +101,19 @@ const AppAnalysis = () => {
       </View>
     );
   }
+
+  // **✅ Correct Numeric Values for Visualization**
+  const filesystemStorageValue = parseFloat(totalStorage.filesystem) || 0;
+  const systemStorageValue = parseFloat(totalStorage.system) || 0;
   
   return (
     <View style={styles.container}>
       <View style={styles.infoContainer}>
         <Text style={styles.title}>Installed Apps Analysis</Text>
         <Text style={styles.data}>
-          Apps: {totalStorage.apps} MB ({apps.length} apps) {"\n"}
-          Filesystem: {totalStorage.filesystem} MB {"\n"}
-          System: {totalStorage.system} MB
+          Apps: {formatStorageSize(totalStorage.apps)} ({apps.length} apps) {"\n"}
+          Filesystem: {formatStorageSize(totalStorage.filesystem)} {"\n"}
+          System: {formatStorageSize(totalStorage.system)}
         </Text>
 
       </View>
@@ -112,13 +121,11 @@ const AppAnalysis = () => {
       <View style={styles.visualizationContainer}>
       <Visualization 
         apps={apps.filter(app => app.totalSize > 1)} 
-        filesystemStorage={parseFloat(totalStorage.filesystem) || 0}
-        systemStorage={parseFloat(totalStorage.system) || 0}
+        filesystemStorage={filesystemStorageValue}
+        systemStorage={systemStorageValue}
         width={windowWidth}
         height={visHeight}
       />
-
-
       </View>
     </View>
   );
