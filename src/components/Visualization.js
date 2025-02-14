@@ -16,11 +16,12 @@ const Visualization = ({ apps, filesystemStorage, systemStorage, width, height }
   }
 
   const totalSize = apps.reduce((sum, app) => sum + (app.totalSize || 0), 0);
-  const colorScale = d3.scaleOrdinal()
-    .domain(["Apps", "Filesystem", "System"])
-    .range(["#6200EE", "#FF9800", "#4CAF50"]);
 
-  // **✅ Correct Nested Treemap Hierarchy**
+  // ✅ Fixed: No interpolation function, just range mapping
+  const dynamicColorScale = d3.scaleLinear()
+    .domain([0, totalSize])
+    .range(["#FF5733", "#33FF57"]); // Red → Green
+
   const root = useMemo(() => {
     try {
       return hierarchy({
@@ -60,7 +61,7 @@ const Visualization = ({ apps, filesystemStorage, systemStorage, width, height }
 
   const treemapLayout = treemap()
     .size([width, height])
-    .round(true) // **🔴 Removed all padding**
+    .round(true) 
     .paddingOuter(0) 
     .paddingInner(0); 
 
@@ -92,7 +93,7 @@ const Visualization = ({ apps, filesystemStorage, systemStorage, width, height }
               <G
                 key={index}
                 onPressIn={() => {
-                  if (node.depth > 1) { // Prevent clicking on categories
+                  if (node.depth > 1) {
                     setSelectedApp({
                       name: node.data.name,
                       size: parseFloat(node.data.size.toFixed(2)),
@@ -107,10 +108,10 @@ const Visualization = ({ apps, filesystemStorage, systemStorage, width, height }
                   width={node.x1 - node.x0}
                   height={node.y1 - node.y0}
                   fill={
-                    isFilesystem ? "#FF9800" :
-                    isSystem ? "#4CAF50" :
-                    colorScale(node.data.size)
-                  }
+                    isFilesystem ? "#99CC00" :   // Green for Filesystem
+                    isSystem ? "#3399FF" :       // Blue for System
+                    dynamicColorScale(node.data.size) // ✅ FIXED: No interpolate function needed
+                  }    
                   stroke={node.depth === 1 ? "#ffffff" : "#6200EE"} // Highlights category borders
                   strokeWidth={node.depth === 1 ? 3 : 2}
                   opacity={0.9}
