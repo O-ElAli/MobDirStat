@@ -25,51 +25,60 @@ const AppAnalysis = () => {
   const legendOpacity = useState(new Animated.Value(1))[0];
 
   useEffect(() => {
-    const fetchApps = async () => {
+    const fetchStorageData = async () => {
       try {
+        // Fetch installed apps with their full storage breakdown
         const appsData = await NativeModule.getInstalledApps();
+        
         if (!Array.isArray(appsData)) {
           console.error("Error: Expected an array from NativeModule.getInstalledApps, got:", typeof appsData);
           return;
-        }    
-
-        let total = 0;
+        }
+  
+        let totalAppStorage = 0;
         const appsList = appsData
           .map(app => {
-            if (!app.name || !app.packageName || isNaN(app.size)) return null;
-
-            total += app.size;
+            if (!app.name || !app.packageName || isNaN(app.totalSize)) return null;
+  
+            totalAppStorage += app.totalSize;
             return { 
               name: app.name,
               packageName: app.packageName,
-              size: app.size,
-              icon: app.icon || "" // Use base64 icon
+              apkSize: app.apkSize,
+              cacheSize: app.cacheSize,
+              externalCacheSize: app.externalCacheSize,
+              dataSize: app.dataSize,
+              totalSize: app.totalSize,
+              icon: app.icon || "" // Base64 icon
             };
           })
           .filter(Boolean)
-          .sort((a, b) => b.size - a.size);
-
+          .sort((a, b) => b.totalSize - a.totalSize);
+  
+        // Fetch filesystem storage
+        const filesystemStorage = await NativeModule.getFilesystemStorage();
+        
+        // Fetch system storage
+        const systemStorage = await NativeModule.getSystemStorageUsage();
+  
         setApps(appsList);
-        setTotalStorage(total.toFixed(2));
+        setTotalStorage({
+          apps: totalAppStorage.toFixed(2),
+          filesystem: filesystemStorage.toFixed(2),
+          system: systemStorage.toFixed(2),
+        });
+  
       } catch (error) {
-        Alert.alert('Error', 'Failed to load app data');
-        console.error('Error fetching apps:', error);
+        Alert.alert('Error', 'Failed to load storage data');
+        console.error('Error fetching storage data:', error);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchApps();
-
-    setTimeout(() => {
-      Animated.timing(legendOpacity, {
-        toValue: 0,
-        duration: 1000,
-        useNativeDriver: true,
-      }).start();
-    }, 5000);
-
+  
+    fetchStorageData();
   }, []);
+  
 
   if (loading) {
     return (
@@ -93,16 +102,23 @@ const AppAnalysis = () => {
       <View style={styles.infoContainer}>
         <Text style={styles.title}>Installed Apps Analysis</Text>
         <Text style={styles.data}>
-          Total Storage: {totalStorage} MB ({apps.length} apps)
+          Apps: {totalStorage.apps} MB ({apps.length} apps) {"\n"}
+          Filesystem: {totalStorage.filesystem} MB {"\n"}
+          System: {totalStorage.system} MB
         </Text>
+
       </View>
 
       <View style={styles.visualizationContainer}>
-        <Visualization 
-          apps={apps.filter(app => app.size > 1)} 
-          width={windowWidth}
-          height={visHeight}
-        />
+      <Visualization 
+        apps={apps.filter(app => app.totalSize > 1)} 
+        filesystemStorage={parseFloat(totalStorage.filesystem) || 0}
+        systemStorage={parseFloat(totalStorage.system) || 0}
+        width={windowWidth}
+        height={visHeight}
+      />
+
+
       </View>
     </View>
   );

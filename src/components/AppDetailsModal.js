@@ -1,6 +1,13 @@
 import React from 'react';
 import { View, Text, Modal, Pressable, Image, StyleSheet } from 'react-native';
 
+const formatStorageSize = (size) => {
+  if (size >= 1024) {
+    return `${(size / 1024).toFixed(1)} GB`; // GB with 1 decimal place
+  }
+  return `${size.toFixed(2)} MB`; // MB with 2 decimal places
+};
+
 const AppDetailsModal = ({ visible, app, onClose }) => {
   if (!app) return null;
 
@@ -15,8 +22,11 @@ const AppDetailsModal = ({ visible, app, onClose }) => {
           )}
           <Text style={styles.appName}>{app.name}</Text>
           <Text style={styles.appDetails}>
-            Size: {app.size} MB {"\n"}
-            Space Taken: {app.percentage}%
+            {app.name === "Filesystem" || app.name === "System" ? (
+              `Total Storage Used: ${app.size} MB`
+            ) : (
+              `Size: ${app.size} MB {"\n"} Space Taken: ${isFinite(app.percentage) ? app.percentage : "0"}%`
+            )}
           </Text>
           <Pressable style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeText}>Close</Text>

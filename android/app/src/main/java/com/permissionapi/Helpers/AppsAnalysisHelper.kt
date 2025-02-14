@@ -12,6 +12,7 @@ import android.os.Process
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableArray
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 class AppsAnalysisHelper(private val context: Context) {
 
@@ -29,90 +30,141 @@ class AppsAnalysisHelper(private val context: Context) {
     }
 
     /**
-     * Retrieves a list of installed apps, their sizes, and icons.
+     * Retrieves a list of installed apps, their total storage usage, and icons.
      */
     fun getInstalledAppsWithSizes(): WritableArray {
         val pm: PackageManager = context.packageManager
         val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
         val appList = Arguments.createArray()
-
+        
         for (app in apps) {
             try {
-                // Retrieve actual app information
                 val appInfo = pm.getApplicationInfo(app.packageName, PackageManager.GET_META_DATA)
                 val appName = pm.getApplicationLabel(appInfo).toString()
                 val packageName = appInfo.packageName
-                val appSize = getAppSizeInBytes(packageName)
+                val appSizes = getAppStorageSizes(packageName)
                 val appIconBase64 = getAppIconBase64(appInfo, pm)
-
-                // Only add apps with valid size
-                if (appSize > 0) {
+        
+                if (appSizes.totalSize > 0) {
                     val appData = Arguments.createMap()
                     appData.putString("name", appName)
                     appData.putString("packageName", packageName)
-                    appData.putDouble("size", appSize / (1024.0 * 1024.0)) // Convert bytes to MB
+                    appData.putDouble("apkSize", appSizes.apkSize / (1024.0 * 1024.0)) // MB
+                    appData.putDouble("cacheSize", appSizes.cacheSize / (1024.0 * 1024.0)) // MB
+                    appData.putDouble("externalCacheSize", appSizes.externalCacheSize / (1024.0 * 1024.0)) // MB
+                    appData.putDouble("dataSize", appSizes.dataSize / (1024.0 * 1024.0)) // MB
+                    appData.putDouble("totalSize", appSizes.totalSize / (1024.0 * 1024.0)) // MB
                     appData.putString("icon", appIconBase64)
-
+        
                     appList.pushMap(appData)
                 }
             } catch (e: Exception) {
-                // Log the error but continue processing other apps
                 e.printStackTrace()
             }
         }
-
         return appList
     }
 
     /**
-     * Retrieves the total size of an app in bytes.
+     * Retrieves detailed storage stats for an app, including APK, cache, data, and external cache.
      */
-    private fun getAppSizeInBytes(packageName: String): Long {
+    private fun getAppStorageSizes(packageName: String): AppStorageSizes {
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val storageStatsManager = context.getSystemService(Context.STORAGE_STATS_SERVICE) as android.app.usage.StorageStatsManager
                 val storageManager = context.getSystemService(Context.STORAGE_SERVICE) as android.os.storage.StorageManager
                 val uuid = storageManager.getUuidForPath(context.filesDir)
                 val storageStats = storageStatsManager.queryStatsForPackage(uuid, packageName, Process.myUserHandle())
-                storageStats.appBytes
+                
+                AppStorageSizes(
+                    apkSize = storageStats.appBytes,
+                    cacheSize = storageStats.cacheBytes,
+                    externalCacheSize = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) storageStats.externalCacheBytes else 0L,
+                    dataSize = storageStats.dataBytes,
+                    totalSize = storageStats.appBytes + storageStats.cacheBytes + storageStats.dataBytes +
+                                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) storageStats.externalCacheBytes else 0L)
+                )
             } else {
                 val packageInfo = context.packageManager.getPackageInfo(packageName, 0)
                 val sourceDir = packageInfo.applicationInfo?.sourceDir
-                if (sourceDir != null) {
-                    val file = java.io.File(sourceDir)
-                    file.length()
-                } else {
-                    0L
-                }
+                val apkSize = if (sourceDir != null) java.io.File(sourceDir).length() else 0L
+                AppStorageSizes(apkSize, 0L, 0L, 0L, apkSize)
             }
         } catch (e: Exception) {
-            0L
+            AppStorageSizes(0L, 0L, 0L, 0L, 0L)
         }
     }
 
     /**
-     * Converts an app icon to a Base64 string for React Native.
+     * Retrieves total filesystem storage usage.
      */
-    private fun getAppIconBase64(app: ApplicationInfo, pm: PackageManager): String {
-        return try {
-            val drawable = pm.getApplicationIcon(app.packageName)
-            val bitmap = Bitmap.createBitmap(
-                drawable.intrinsicWidth.coerceAtLeast(1), // Ensure width is at least 1px
-                drawable.intrinsicHeight.coerceAtLeast(1), // Ensure height is at least 1px
-                Bitmap.Config.ARGB_8888
-            )
+    fun getFilesystemStorage(): Long {
+        return FsScanner().scan(File("/storage/emulated/0")) // Adjust path if needed
+    }
 
-            val canvas = Canvas(bitmap)
-            drawable.setBounds(0, 0, canvas.width, canvas.height)
-            drawable.draw(canvas)
+    /**
+     * Retrieves system storage usage.
+     */
+    fun getSystemStorageUsage(): Long {
+        return SystemScanner(context).getSystemStorageUsage()
+    }
+}
 
-            val outputStream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-            val byteArray = outputStream.toByteArray()
+/**
+ * Data class to store app storage information.
+ */
+data class AppStorageSizes(
+    val apkSize: Long,
+    val cacheSize: Long,
+    val externalCacheSize: Long,
+    val dataSize: Long,
+    val totalSize: Long
+)
+/**
+ * Converts an app icon to a Base64 string for React Native.
+ */
+private fun getAppIconBase64(app: ApplicationInfo, pm: PackageManager): String {
+    return try {
+        val drawable = pm.getApplicationIcon(app.packageName)
+        val bitmap = Bitmap.createBitmap(
+            drawable.intrinsicWidth.coerceAtLeast(1), // Ensure width is at least 1px
+            drawable.intrinsicHeight.coerceAtLeast(1), // Ensure height is at least 1px
+            Bitmap.Config.ARGB_8888
+        )
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
 
-            "data:image/png;base64," + Base64.encodeToString(byteArray, Base64.NO_WRAP)
-        } catch (e: Exception) {
-            ""
+        val outputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+        val byteArray = outputStream.toByteArray()
+
+        "data:image/png;base64," + Base64.encodeToString(byteArray, Base64.NO_WRAP)
+    } catch (e: Exception) {
+        ""
+    }
+}
+
+/**
+ * Filesystem Scanner
+ */
+class FsScanner {
+    fun scan(directory: File): Long {
+        var totalSize = 0L
+        directory.listFiles()?.forEach {
+            totalSize += if (it.isDirectory) scan(it) else it.length()
         }
+        return totalSize
+    }
+}
+
+/**
+ * System Storage Scanner
+ */
+class SystemScanner(private val context: Context) {
+    fun getSystemStorageUsage(): Long {
+        val totalSpace = File("/").totalSpace
+        val freeSpace = File("/").freeSpace
+        return totalSpace - freeSpace
     }
 }

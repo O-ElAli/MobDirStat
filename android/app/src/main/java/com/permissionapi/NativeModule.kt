@@ -92,4 +92,24 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
             promise.reject("MEDIA_ANALYSIS_ERROR", "Failed in getDetailedMediaAnalysis", e)
         }
     }
+    @ReactMethod
+    fun getFilesystemStorage(promise: Promise) {
+        try {
+            val storageSize = AppsAnalysisHelper(reactApplicationContext).getFilesystemStorage()
+            promise.resolve(storageSize / (1024.0 * 1024.0)) // Convert to MB
+        } catch (e: Exception) {
+            promise.reject("FILESYSTEM_ERROR", "Failed to fetch filesystem storage", e)
+        }
+    }
+
+    @ReactMethod
+    fun getSystemStorageUsage(promise: Promise) {
+        try {
+            val systemSize = AppsAnalysisHelper(reactApplicationContext).getSystemStorageUsage()
+            promise.resolve(systemSize / (1024.0 * 1024.0)) // Convert to MB
+        } catch (e: Exception) {
+            promise.reject("SYSTEM_ERROR", "Failed to fetch system storage", e)
+        }
+    }
+
 }
