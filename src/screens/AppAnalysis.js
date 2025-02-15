@@ -192,12 +192,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#020203',
   },
   navbar: {
-    height: 50, // Fixed height for navbar
+    height: 100, // Fixed height for navbar
     width: '100%',
     zIndex: 10, // Ensures it stays on top
   },
   infoContainer: {
-    height: 60, // Fixed height for info section
+    height: 100, // Fixed height for info section
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#121212',
