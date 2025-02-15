@@ -1,78 +1,64 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
-  StyleSheet, 
+  useWindowDimensions, 
   ActivityIndicator, 
   Alert, 
-  useWindowDimensions, 
-  Animated 
+  StyleSheet 
 } from 'react-native';
 import { NativeModules } from 'react-native';
+import { TabView, TabBar } from 'react-native-tab-view';
 import Visualization from '../components/Visualization';
+import PieChartComponent from '../components/PieChartComponent';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const { NativeModule } = NativeModules;
 
 const formatStorageSize = (size) => {
-  if (size >= 1024) {
-    return `${(size / 1024).toFixed(1)} GB`; // GB with 1 decimal place
-  }
-  return `${size.toFixed(2)} MB`; // MB with 2 decimal places
+  return size >= 1024 
+    ? `${(size / 1024).toFixed(1)} GB` 
+    : `${size.toFixed(2)} MB`; 
 };
 
-
 const AppAnalysis = () => {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  
   const [apps, setApps] = useState([]);
   const [totalStorage, setTotalStorage] = useState({ apps: 0, filesystem: 0, system: 0 });
   const [loading, setLoading] = useState(true);
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  
-  const visHeight = windowHeight * 0.6;
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [index, setIndex] = useState(0);
 
   useEffect(() => {
     const fetchStorageData = async () => {
       try {
-        // Fetch installed apps with their full storage breakdown
         const appsData = await NativeModule.getInstalledApps();
-        
         if (!Array.isArray(appsData)) {
-          console.error("Error: Expected an array from NativeModule.getInstalledApps, got:", typeof appsData);
+          console.error("Error: Expected an array from NativeModule.getInstalledApps.");
           return;
         }
-  
         let totalAppStorage = 0;
         const appsList = appsData
           .map(app => {
             if (!app.name || !app.packageName || isNaN(app.totalSize)) return null;
-  
             totalAppStorage += app.totalSize;
             return { 
               name: app.name,
               packageName: app.packageName,
-              apkSize: app.apkSize,
-              cacheSize: app.cacheSize,
-              externalCacheSize: app.externalCacheSize,
-              dataSize: app.dataSize,
-              totalSize: app.totalSize,
-              icon: app.icon || "" // Base64 icon
+              totalSize: app.totalSize
             };
           })
           .filter(Boolean)
           .sort((a, b) => b.totalSize - a.totalSize);
-  
-        // Fetch filesystem storage
         const filesystemStorage = await NativeModule.getFilesystemStorage();
-        
-        // Fetch system storage
         const systemStorage = await NativeModule.getSystemStorageUsage();
-  
         setApps(appsList);
         setTotalStorage({
           apps: totalAppStorage,
           filesystem: filesystemStorage,
           system: systemStorage,
         });
-  
       } catch (error) {
         Alert.alert('Error', 'Failed to load storage data');
         console.error('Error fetching storage data:', error);
@@ -80,10 +66,8 @@ const AppAnalysis = () => {
         setLoading(false);
       }
     };
-  
     fetchStorageData();
   }, []);
-  
 
   if (loading) {
     return (
@@ -102,62 +86,139 @@ const AppAnalysis = () => {
     );
   }
 
-  // **✅ Correct Numeric Values for Visualization**
   const filesystemStorageValue = parseFloat(totalStorage.filesystem) || 0;
   const systemStorageValue = parseFloat(totalStorage.system) || 0;
-  
+
+  const routes = [
+    { key: 'full', title: 'Map', icon: 'grid' },
+    { key: 'apps', title: 'Apps', icon: 'apps' },
+    { key: 'filesystem', title: 'Media', icon: 'folder' },
+    { key: 'pie', title: 'Types', icon: 'chart-pie' }
+  ];
+
+  const renderScene = ({ route }) => {
+    let content;
+    switch (route.key) {
+      case 'full':
+        content = <Visualization 
+          apps={apps} 
+          filesystemStorage={filesystemStorageValue} 
+          systemStorage={systemStorageValue} 
+          width={windowWidth} 
+          height={Math.round(windowHeight * 0.7)} 
+          onSelectApp={setSelectedApp} 
+        />;
+        break;
+      case 'apps':
+        content = <Visualization 
+          apps={apps} 
+          filesystemStorage={0} 
+          systemStorage={0} 
+          width={windowWidth} 
+          height={Math.round(windowHeight * 0.7)}
+          onSelectApp={setSelectedApp} 
+        />;
+        break;
+      case 'filesystem':
+        content = <Visualization 
+          apps={[]} 
+          filesystemStorage={filesystemStorageValue} 
+          systemStorage={0} 
+          width={windowWidth} 
+          height={300} 
+          onSelectApp={setSelectedApp} 
+        />;
+        break;
+      case 'pie':
+        content = <PieChartComponent 
+          apps={apps} 
+          filesystemStorage={filesystemStorageValue} 
+          systemStorage={systemStorageValue} 
+        />;
+        break;
+      default:
+        content = null;
+    }
+
+    return (
+      <View style={styles.sceneContainer}>
+        {/* Info Section */}
+        <View style={styles.infoContainer}>
+          {selectedApp ? (
+            <>
+              <Text style={styles.title}>{selectedApp.name}</Text>
+              <Text style={styles.data}>
+                Size: {formatStorageSize(selectedApp.size)}{"\n"}
+                Percentage: {selectedApp.percentage}%
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.defaultText}>Click on an icon for more details</Text>
+          )}
+        </View>
+
+        {/* Treemap Content */}
+        <View style={styles.treemapWrapper}>
+          {content}
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.infoContainer}>
-        <Text style={styles.title}>Installed Apps Analysis</Text>
-        <Text style={styles.data}>
-          Apps: {formatStorageSize(totalStorage.apps)} ({apps.length} apps) {"\n"}
-          Filesystem: {formatStorageSize(totalStorage.filesystem)} {"\n"}
-          System: {formatStorageSize(totalStorage.system)}
-        </Text>
-
-      </View>
-
-      <View style={styles.visualizationContainer}>
-      <Visualization 
-        apps={apps.filter(app => app.totalSize > 1)} 
-        filesystemStorage={filesystemStorageValue}
-        systemStorage={systemStorageValue}
-        width={windowWidth}
-        height={visHeight}
+      <TabView
+        navigationState={{ index, routes }}
+        renderScene={renderScene}
+        onIndexChange={setIndex}
+        initialLayout={{ width: windowWidth }}
+        renderTabBar={(props) => (
+          <TabBar
+            {...props}
+            renderIcon={({ route }) => <Icon name={route.icon} size={24} color="white" />}
+            indicatorStyle={{ backgroundColor: 'white' }}
+            style={styles.tabBar}
+          />
+        )}
       />
-      </View>
     </View>
   );
 };
 
-
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#020203',
-    padding: 20,
+  },
+  navbar: {
+    height: 50, // Fixed height for navbar
+    width: '100%',
+    zIndex: 10, // Ensures it stays on top
   },
   infoContainer: {
-    flex: 0.4, // 40% of the screen height
-    justifyContent: 'center',
+    height: 60, // Fixed height for info section
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#121212',
+    width: '100%', 
   },
   title: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 15,
-    color: '#ebd8d8',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   data: {
     fontSize: 16,
-    marginBottom: 10,
-    color: '#ccc',
+    color: '#AAAAAA',
   },
-  visualizationContainer: {
-    flex: 0.6, // 60% of the screen height
-    justifyContent: 'center',
-    alignItems: 'center',
+  defaultText: {
+    fontSize: 16,
+    color: '#CCCCCC',
+  },
+  treemapWrapper: {
+    flex: 1, // Takes up remaining space
+    width: '100%', 
   },
   loadingText: {
     marginTop: 10,
@@ -168,20 +229,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#dc3545',
     textAlign: 'center',
-  },
-  legend: {
-    marginTop: 10,
-    padding: 10,
-    backgroundColor: '#e9ecef',
-    borderRadius: 5,
-    position: 'absolute',
-    bottom: 20, // Keeps it above the visualization
-    alignSelf: 'center',
-  },
-  legendText: {
-    fontSize: 12,
-    color: '#495057',
-    fontStyle: 'italic',
   },
 });
 
