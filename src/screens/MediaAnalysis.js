@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { NativeModules } from "react-native";
 import Svg, { Rect, G } from "react-native-svg";
-import { treemap, hierarchy, treemapBinary } from "d3-hierarchy";
+import { treemap, hierarchy, treemapResquarify } from "d3-hierarchy";
 import * as d3 from "d3-scale";
 
 const { NativeModule } = NativeModules;
@@ -58,15 +58,14 @@ const MediaAnalysis = () => {
     );
   }
 
-  // ✅ Convert hierarchy data into a structure usable by d3-treemap
   const root = hierarchy(storageData)
-  .sum((d) => d.size || 0) // Ensure every file contributes to the hierarchy
-  .sort((a, b) => b.value - a.value); // Sort so larger files appear first
+    .sum((d) => d.size > 500 * 1024 ? d.size : 500 * 1024) // Ensure even small files show up
+    .sort((a, b) => b.value - a.value); // Sort by file size
 
   const tree = treemap()
-    .size([svgWidth, svgHeight]) // Ensure full utilization of screen space
-    .tile(treemapBinary) // Forces compact layout similar to DiskUsage
-    .padding(0.5); // Minimal padding to reduce gaps
+    .size([svgWidth, svgHeight]) // Maximize space usage
+    .tile(treemapResquarify) // Optimized layout similar to DiskUsage
+    .padding(0); // Remove padding to eliminate gaps
 
   tree(root);
 
@@ -88,8 +87,8 @@ const MediaAnalysis = () => {
               width={leaf.x1 - leaf.x0}
               height={leaf.y1 - leaf.y0}
               fill={colorScale(leaf.parent ? leaf.parent.data.name : "default") || "#757575"}
-              stroke="#fff"
-              strokeWidth="2"
+              stroke="#fff" // Thin inner border
+              strokeWidth="0.3" // Light border to separate small squares
             />
           </G>
         ))}
