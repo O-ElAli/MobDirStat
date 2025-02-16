@@ -107,7 +107,7 @@ const Visualization = ({ apps, filesystemStorage, systemStorage, width, height, 
                 fill={
                   isFilesystem ? "#99CC00" :   // Green for Filesystem
                   isSystem ? "#3399FF" :       // Blue for System
-                  dynamicColorScale(node.data.size) // ✅ FIXED: No interpolate function needed
+                  dynamicColorScale(node.data.size)
                 }    
                 stroke={node.depth === 1 ? "#ffffff" : "#6200EE"} // Highlights category borders
                 strokeWidth={node.depth === 1 ? 3 : 2}

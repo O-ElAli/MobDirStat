@@ -1,24 +1,31 @@
 package com.permissionapi
 
-import android.content.Intent
-import android.util.Log
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.core.content.ContextCompat
 import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.util.Log
+import androidx.core.content.ContextCompat
 import com.facebook.react.bridge.*
 import com.permissionapi.helpers.AppsAnalysisHelper
 import com.permissionapi.helpers.MediaAnalysisHelper
-import android.provider.MediaStore
-import android.net.Uri
-import android.os.Environment
-import android.provider.Settings
-
 
 class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
     override fun getName(): String {
         return "NativeModule"
+    }
+
+    // ✅ Function to check and request media permissions
+    private fun hasMediaPermissions(): Boolean {
+        val permissions = arrayOf(
+            Manifest.permission.READ_MEDIA_IMAGES,
+            Manifest.permission.READ_MEDIA_VIDEO,
+            Manifest.permission.READ_MEDIA_AUDIO
+        )
+
+        return permissions.all {
+            ContextCompat.checkSelfPermission(reactApplicationContext, it) == PackageManager.PERMISSION_GRANTED
+        }
     }
 
     @ReactMethod
@@ -37,10 +44,51 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
     }
 
     @ReactMethod
-    fun checkAndRequestPermissions(promise: Promise) {
-        val appsHelper = AppsAnalysisHelper(reactApplicationContext)
+    fun getStorageHierarchy(promise: Promise) {
+        Log.d("NativeModule", "📢 getStorageHierarchy called")
+    
+        try {
+            val mediaHelper = MediaAnalysisHelper(reactApplicationContext)
+            val result = mediaHelper.getStorageHierarchy()
+    
+            Log.d("NativeModule", "✅ Storage hierarchy retrieved successfully")
+            promise.resolve(result)
+    
+        } catch (e: Exception) {
+            Log.e("NativeModule", "❌ Error in getStorageHierarchy", e)
+            promise.reject("MEDIA_HIERARCHY_ERROR", "Failed to fetch full storage hierarchy", e)
+        }
+    }
+    
 
-        if (appsHelper.hasUsageStatsPermission()) {
+    // ✅ Fetch total storage available on the filesystem
+    @ReactMethod
+    fun getFilesystemStorage(promise: Promise) {
+        try {
+            val storageSize = AppsAnalysisHelper(reactApplicationContext).getFilesystemStorage()
+            promise.resolve(storageSize / (1024.0 * 1024.0)) // Convert bytes to MB
+        } catch (e: Exception) {
+            Log.e("NativeModule", "❌ Error fetching filesystem storage", e)
+            promise.reject("FILESYSTEM_ERROR", "Failed to fetch filesystem storage", e)
+        }
+    }
+
+    // ✅ Fetch system storage usage (how much space system files take)
+    @ReactMethod
+    fun getSystemStorageUsage(promise: Promise) {
+        try {
+            val systemSize = AppsAnalysisHelper(reactApplicationContext).getSystemStorageUsage()
+            promise.resolve(systemSize / (1024.0 * 1024.0)) // Convert bytes to MB
+        } catch (e: Exception) {
+            Log.e("NativeModule", "❌ Error fetching system storage", e)
+            promise.reject("SYSTEM_ERROR", "Failed to fetch system storage", e)
+        }
+    }
+
+    // ✅ Check if media permissions are granted
+    @ReactMethod
+    fun checkMediaPermissions(promise: Promise) {
+        if (hasMediaPermissions()) {
             promise.resolve(true)
         } else {
             promise.resolve(false)
@@ -56,60 +104,5 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
         } catch (e: Exception) {
             promise.reject("APP_ERROR", "Failed to fetch installed apps", e)
         }
-    }    
-
-    @ReactMethod
-    fun getDetailedMediaAnalysis(promise: Promise) {
-        Log.d("NativeModule", "getDetailedMediaAnalysis called") // Log method call
-        try {
-            // Permissions check (ensure they are granted)
-            if (ContextCompat.checkSelfPermission(
-                    reactApplicationContext,
-                    android.Manifest.permission.READ_MEDIA_IMAGES
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                Log.e("NativeModule", "READ_MEDIA_IMAGES permission not granted")
-                promise.reject("PERMISSION_ERROR", "Permissions not granted for media analysis")
-                return
-            }
-
-            val mediaHelper = MediaAnalysisHelper(reactApplicationContext)
-
-            // Fetch media sizes
-            val imagesSize = mediaHelper.getTotalSize(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-            val videosSize = mediaHelper.getTotalSize(MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
-
-            // Prepare result map
-            val result = Arguments.createMap()
-            result.putDouble("imagesSize", imagesSize / (1024.0 * 1024.0)) // Convert to MB
-            result.putDouble("videosSize", videosSize / (1024.0 * 1024.0)) // Convert to MB
-            result.putString("message", "Analysis complete")
-
-            Log.d("NativeModule", "Returning result: $result")
-            promise.resolve(result)
-        } catch (e: Exception) {
-            Log.e("NativeModule", "Error in getDetailedMediaAnalysis", e)
-            promise.reject("MEDIA_ANALYSIS_ERROR", "Failed in getDetailedMediaAnalysis", e)
-        }
     }
-    @ReactMethod
-    fun getFilesystemStorage(promise: Promise) {
-        try {
-            val storageSize = AppsAnalysisHelper(reactApplicationContext).getFilesystemStorage()
-            promise.resolve(storageSize / (1024.0 * 1024.0)) // Convert to MB
-        } catch (e: Exception) {
-            promise.reject("FILESYSTEM_ERROR", "Failed to fetch filesystem storage", e)
-        }
-    }
-
-    @ReactMethod
-    fun getSystemStorageUsage(promise: Promise) {
-        try {
-            val systemSize = AppsAnalysisHelper(reactApplicationContext).getSystemStorageUsage()
-            promise.resolve(systemSize / (1024.0 * 1024.0)) // Convert to MB
-        } catch (e: Exception) {
-            promise.reject("SYSTEM_ERROR", "Failed to fetch system storage", e)
-        }
-    }
-
 }
