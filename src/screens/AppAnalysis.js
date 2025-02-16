@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { NativeModules } from 'react-native';
 import { TabView, TabBar } from 'react-native-tab-view';
-import Visualization from '../components/Visualization';
+import Visualization from '../components/AppsVisualization';
 import PieChartComponent from '../components/PieChartComponent';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 

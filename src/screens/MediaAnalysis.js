@@ -4,21 +4,14 @@ import {
   Text, 
   StyleSheet, 
   Alert, 
-  ActivityIndicator, 
-  useWindowDimensions 
+  ActivityIndicator 
 } from "react-native";
 import { NativeModules } from "react-native";
-import Svg, { Rect, G } from "react-native-svg";
-import { treemap, hierarchy, treemapResquarify } from "d3-hierarchy";
-import * as d3 from "d3-scale";
+import MediaVisualization from "../components/MediaVisualization"; // Import new component
 
 const { NativeModule } = NativeModules;
 
 const MediaAnalysis = () => {
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const svgWidth = screenWidth * 0.9; // Use 90% of screen width
-  const svgHeight = screenHeight * 0.6; // Use 60% of screen height
-
   const [storageData, setStorageData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -27,9 +20,15 @@ const MediaAnalysis = () => {
       try {
         console.log("📢 Fetching Full Storage Hierarchy...");
         const result = await NativeModule.getStorageHierarchy();
+  
+        if (typeof result === "string") {
+          console.warn("⚠ `getStorageHierarchy` returned a string. Parsing JSON...");
+          setStorageData(JSON.parse(result)); // ✅ Ensure it's an object
+        } else {
+          setStorageData(result);
+        }
+  
         console.log("✅ Full Storage Hierarchy:", result);
-
-        setStorageData(result);
       } catch (error) {
         console.error("🚨 Error fetching storage hierarchy:", error);
         Alert.alert("Error", "Failed to fetch storage hierarchy.");
@@ -37,9 +36,10 @@ const MediaAnalysis = () => {
         setLoading(false);
       }
     };
-
+  
     fetchStorageHierarchy();
   }, []);
+  
 
   if (loading) {
     return (
@@ -58,41 +58,10 @@ const MediaAnalysis = () => {
     );
   }
 
-  const root = hierarchy(storageData)
-    .sum((d) => d.size > 500 * 1024 ? d.size : 500 * 1024) // Ensure even small files show up
-    .sort((a, b) => b.value - a.value); // Sort by file size
-
-  const tree = treemap()
-    .size([svgWidth, svgHeight]) // Maximize space usage
-    .tile(treemapResquarify) // Optimized layout similar to DiskUsage
-    .padding(0); // Remove padding to eliminate gaps
-
-  tree(root);
-
-  // ✅ Color Scale for different folders
-  const colorScale = d3.scaleOrdinal()
-    .domain(root.children ? root.children.map((d) => d.data.name) : [])
-    .range(["#BB86FC", "#6200EA", "#FF0266", "#FF9800", "#03DAC6", "#8BC34A", "#FFC107", "#FF5722"]);
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Storage Breakdown</Text>
-
-      <Svg width={svgWidth} height={svgHeight} style={styles.svg}>
-        {root.leaves().map((leaf, index) => (
-          <G key={index}>
-            <Rect
-              x={leaf.x0}
-              y={leaf.y0}
-              width={leaf.x1 - leaf.x0}
-              height={leaf.y1 - leaf.y0}
-              fill={colorScale(leaf.parent ? leaf.parent.data.name : "default") || "#757575"}
-              stroke="#fff" // Thin inner border
-              strokeWidth="0.3" // Light border to separate small squares
-            />
-          </G>
-        ))}
-      </Svg>
+      <MediaVisualization storageData={storageData} /> {/* ✅ Pass data to the new component */}
     </View>
   );
 };
@@ -108,11 +77,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 10,
-  },
-  svg: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    marginTop: 10,
   },
   loadingText: {
     marginTop: 10,
