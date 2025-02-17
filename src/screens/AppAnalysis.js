@@ -15,13 +15,10 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const { NativeModule } = NativeModules;
 
-// 📌 Utility function to format storage sizes
 const formatStorageSize = (size) => {
-  if (size >= 1024) {
-    return `${(size / 1024).toFixed(1)} GB`;
-  } else {
-    return `${size.toFixed(2)} MB`;
-  }
+  return size >= 1024 
+    ? `${(size / 1024).toFixed(1)} GB` 
+    : `${size.toFixed(2)} MB`;
 };
 
 const AppAnalysis = () => {
@@ -30,19 +27,17 @@ const AppAnalysis = () => {
   const [apps, setApps] = useState([]);
   const [totalStorage, setTotalStorage] = useState({ apps: 0, filesystem: 0, system: 0 });
   const [loading, setLoading] = useState(true);
+  const [selectedApp, setSelectedApp] = useState(null);
   const [index, setIndex] = useState(0);
-  const [selectedItem, setSelectedItem] = useState(null); // ✅ Store selected item
 
   useEffect(() => {
     const fetchStorageData = async () => {
       try {
-        console.log("📢 Fetching Installed Apps...");
         const appsData = await NativeModule.getInstalledApps();
         if (!Array.isArray(appsData)) {
-          console.error("❌ Expected an array from NativeModule.getInstalledApps.");
+          console.error("Error: Expected an array from NativeModule.getInstalledApps.");
           return;
         }
-
         let totalAppStorage = 0;
         const appsList = appsData
           .map(app => {
@@ -56,29 +51,21 @@ const AppAnalysis = () => {
           })
           .filter(Boolean)
           .sort((a, b) => b.totalSize - a.totalSize);
-
-        console.log("📢 Fetching Filesystem Storage...");
         const filesystemStorage = await NativeModule.getFilesystemStorage();
-
-        console.log("📢 Fetching System Storage...");
         const systemStorage = await NativeModule.getSystemStorageUsage();
-
-        // ✅ Update state with formatted storage values
         setApps(appsList);
         setTotalStorage({
           apps: totalAppStorage,
           filesystem: filesystemStorage,
           system: systemStorage,
         });
-
       } catch (error) {
         Alert.alert('Error', 'Failed to load storage data');
-        console.error('❌ Error fetching storage data:', error);
+        console.error('Error fetching storage data:', error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchStorageData();
   }, []);
 
@@ -86,7 +73,7 @@ const AppAnalysis = () => {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#6200EE" />
-        <Text style={styles.loadingText}>Fetching storage data...</Text>
+        <Text style={styles.loadingText}>Analyzing installed apps...</Text>
       </View>
     );
   }
@@ -101,19 +88,6 @@ const AppAnalysis = () => {
 
   const filesystemStorageValue = parseFloat(totalStorage.filesystem) || 0;
   const systemStorageValue = parseFloat(totalStorage.system) || 0;
-  const totalUsedStorage = totalStorage.apps + filesystemStorageValue + systemStorageValue;
-
-  // ✅ Function to handle section selection
-  const handleSelectItem = (item) => {
-    console.log("📌 Item Selected:", item);
-    setSelectedItem(item); // ✅ Update the selected item
-  };
-
-  // ✅ Reset selected item when changing tabs
-  const handleTabChange = (newIndex) => {
-    setSelectedItem(null); // Reset selection when switching tabs
-    setIndex(newIndex);
-  };
 
   const routes = [
     { key: 'full', title: 'Map', icon: 'grid' },
@@ -131,8 +105,8 @@ const AppAnalysis = () => {
           filesystemStorage={filesystemStorageValue} 
           systemStorage={systemStorageValue} 
           width={windowWidth} 
-          height={Math.round(windowHeight * 0.6)} 
-          onSelectApp={handleSelectItem} // ✅ Ensure it's passed
+          height={Math.round(windowHeight * 0.7)} 
+          onSelectApp={setSelectedApp} 
         />;
         break;
       case 'apps':
@@ -141,8 +115,8 @@ const AppAnalysis = () => {
           filesystemStorage={0} 
           systemStorage={0} 
           width={windowWidth} 
-          height={Math.round(windowHeight * 0.6)}
-          onSelectApp={handleSelectItem} // ✅ Ensure it's passed
+          height={Math.round(windowHeight * 0.7)}
+          onSelectApp={setSelectedApp} 
         />;
         break;
       case 'filesystem':
@@ -151,8 +125,8 @@ const AppAnalysis = () => {
           filesystemStorage={filesystemStorageValue} 
           systemStorage={0} 
           width={windowWidth} 
-          height={Math.round(windowHeight * 0.6)} 
-          onSelectApp={handleSelectItem} // ✅ Ensure it's passed
+          height={300} 
+          onSelectApp={setSelectedApp} 
         />;
         break;
       case 'pie':
@@ -168,33 +142,19 @@ const AppAnalysis = () => {
 
     return (
       <View style={styles.sceneContainer}>
-        {/* 📌 Dynamic Info Section Based on Tab & User Selection */}
-        <View style={styles.storageOverview}>
-          {selectedItem ? (
+        {/* Info Section */}
+        <View style={styles.infoContainer}>
+          {selectedApp ? (
             <>
-              <Text style={styles.title}>{selectedItem.name}</Text>
-              <Text style={styles.data}>Size: {formatStorageSize(selectedItem.size)}</Text>
-              <Text style={styles.data}>Percentage: {selectedItem.percentage}%</Text>
+              <Text style={styles.title}>{selectedApp.name}</Text>
+              <Text style={styles.data}>
+                Size: {formatStorageSize(selectedApp.size)}{"\n"}
+                Percentage: {selectedApp.percentage}%
+              </Text>
             </>
-          ) : route.key === 'full' ? (
-            <>
-              <Text style={styles.title}>📊 Phone Storage Overview</Text>
-              <Text style={styles.data}>🛠️ Total Used: {formatStorageSize(totalUsedStorage)}</Text>
-              <Text style={styles.data}>📱 Apps: {formatStorageSize(totalStorage.apps)}</Text>
-              <Text style={styles.data}>📂 Filesystem: {formatStorageSize(totalStorage.filesystem)}</Text>
-              <Text style={styles.data}>⚙️ System: {formatStorageSize(totalStorage.system)}</Text>
-            </>
-          ) : route.key === 'apps' ? (
-            <>
-              <Text style={styles.title}>📱 Apps Storage</Text>
-              <Text style={styles.data}>Total: {formatStorageSize(totalStorage.apps)}</Text>
-            </>
-          ) : route.key === 'filesystem' ? (
-            <>
-              <Text style={styles.title}>📂 Media Storage</Text>
-              <Text style={styles.data}>Total: {formatStorageSize(totalStorage.filesystem)}</Text>
-            </>
-          ) : null}
+          ) : (
+            <Text style={styles.defaultText}>Click on an icon for more details</Text>
+          )}
         </View>
 
         {/* Treemap Content */}
@@ -210,7 +170,7 @@ const AppAnalysis = () => {
       <TabView
         navigationState={{ index, routes }}
         renderScene={renderScene}
-        onIndexChange={handleTabChange} // ✅ Reset selection when switching tabs
+        onIndexChange={setIndex}
         initialLayout={{ width: windowWidth }}
         renderTabBar={(props) => (
           <TabBar
@@ -225,35 +185,50 @@ const AppAnalysis = () => {
   );
 };
 
-
-
-// 📌 Styles
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#020203',
   },
-  storageOverview: {
-    padding: 10,
-    backgroundColor: '#1E1E1E',
-    marginBottom: 5,
-    borderRadius: 5,
+  navbar: {
+    height: 100, // Fixed height for navbar
+    width: '100%',
+    zIndex: 10, // Ensures it stays on top
+  },
+  infoContainer: {
+    height: 100, // Fixed height for info section
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#121212',
+    width: '100%', 
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    textAlign: 'center',
   },
   data: {
     fontSize: 16,
     color: '#AAAAAA',
-    textAlign: 'center',
-    marginTop: 2,
+  },
+  defaultText: {
+    fontSize: 16,
+    color: '#CCCCCC',
   },
   treemapWrapper: {
-    flex: 1,
+    flex: 1, // Takes up remaining space
     width: '100%', 
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#888',
+  },
+  warning: {
+    fontSize: 16,
+    color: '#dc3545',
+    textAlign: 'center',
   },
 });
 
