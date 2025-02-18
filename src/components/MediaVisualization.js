@@ -9,7 +9,7 @@ const MediaVisualization = React.memo(({ storageData }) => {
   console.log("🔄 MediaVisualization re-rendering...");
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const svgWidth = screenWidth * 0.9;
+  const svgWidth = screenWidth;
   const svgHeight = screenHeight * 0.6;
 
   if (!storageData || !storageData.children) {
@@ -19,7 +19,7 @@ const MediaVisualization = React.memo(({ storageData }) => {
   // ✅ RESTORED: EXACTLY how it was before (5MB min threshold)
   const root = useMemo(() => {
     return hierarchy(storageData)
-      .sum((d) => d.size > 5 * 1024 * 1024 ? d.size : 5 * 1024 * 1024)
+      .sum((d) => d.size > 0 ? d.size : 1) // Prevent NaN values, default to 1 if size <= 0
       .sort((a, b) => b.value - a.value);
   }, [storageData]); // ✅ Only re-compute if `storageData` actually changes
 
