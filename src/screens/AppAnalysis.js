@@ -77,6 +77,11 @@ const AppAnalysis = () => {
     fetchStorageData();
   }, []);
 
+  // Reset selectedItem when the tab index changes
+  useEffect(() => {
+    setSelectedItem(null);
+  }, [index]);
+
   if (loading) {
     return (
       <View style={styles.container}>
