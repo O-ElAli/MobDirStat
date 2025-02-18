@@ -8,6 +8,11 @@ import androidx.core.content.ContextCompat
 import com.facebook.react.bridge.*
 import com.permissionapi.helpers.AppsAnalysisHelper
 import com.permissionapi.helpers.MediaAnalysisHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
 
 class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
@@ -45,20 +50,23 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
 
     @ReactMethod
     fun getStorageHierarchy(promise: Promise) {
-        Log.d("NativeModule", "📢 getStorageHierarchy called")
-    
-        try {
-            val mediaHelper = MediaAnalysisHelper(reactApplicationContext)
-            val result = mediaHelper.getStorageHierarchy()
-    
-            Log.d("NativeModule", "✅ Storage hierarchy retrieved successfully")
-            promise.resolve(result)
-    
-        } catch (e: Exception) {
-            Log.e("NativeModule", "❌ Error in getStorageHierarchy", e)
-            promise.reject("MEDIA_HIERARCHY_ERROR", "Failed to fetch full storage hierarchy", e)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val mediaHelper = MediaAnalysisHelper(reactApplicationContext)
+                val result = mediaHelper.getStorageHierarchy()
+                
+                withContext(Dispatchers.Main) {
+                    promise.resolve(result) // Ensure result is sent back on main thread
+                }
+            } catch (e: Exception) {
+                Log.e("NativeModule", "❌ Error in getStorageHierarchy", e)
+                withContext(Dispatchers.Main) {
+                    promise.reject("MEDIA_HIERARCHY_ERROR", "Failed to fetch full storage hierarchy", e)
+                }
+            }
         }
     }
+
     
 
     // ✅ Fetch total storage available on the filesystem

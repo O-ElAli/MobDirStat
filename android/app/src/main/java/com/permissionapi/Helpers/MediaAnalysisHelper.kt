@@ -11,16 +11,14 @@ class MediaAnalysisHelper(private val context: Context) {
     // ✅ Scans the entire filesystem recursively (like DiskUsage)
     fun getStorageHierarchy(): WritableMap {
         Log.d("MediaAnalysisHelper", "📢 Scanning full storage structure")
-
-        val rootDirectory = File("/storage/emulated/0") // Internal storage
+        val rootDirectory = File("/storage/emulated/0")
         val rootMap = Arguments.createMap()
         rootMap.putString("name", "Internal Storage")
-
         scanDirectory(rootDirectory, rootMap)
-
         Log.d("MediaAnalysisHelper", "✅ Returning full storage hierarchy")
         return rootMap
     }
+    
 
     // ✅ Recursively scan directories and add them to the hierarchy
     private fun scanDirectory(directory: File, parent: WritableMap) {
