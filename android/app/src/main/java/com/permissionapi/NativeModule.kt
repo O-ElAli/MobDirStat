@@ -69,29 +69,59 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
 
     
 
-    // ✅ Fetch total storage available on the filesystem
+    @ReactMethod
+    fun getInstalledApps(promise: Promise) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val appsHelper = AppsAnalysisHelper(reactApplicationContext)
+                val appsList = withContext(Dispatchers.IO) { appsHelper.getInstalledAppsWithSizes() } // Ensure suspend function is called correctly
+    
+                withContext(Dispatchers.Main) {
+                    promise.resolve(appsList)
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    promise.reject("APP_ERROR", "Failed to fetch installed apps", e)
+                }
+            }
+        }
+    }
+    
+    
     @ReactMethod
     fun getFilesystemStorage(promise: Promise) {
-        try {
-            val storageSize = AppsAnalysisHelper(reactApplicationContext).getFilesystemStorage()
-            promise.resolve(storageSize / (1024.0 * 1024.0)) // Convert bytes to MB
-        } catch (e: Exception) {
-            Log.e("NativeModule", "❌ Error fetching filesystem storage", e)
-            promise.reject("FILESYSTEM_ERROR", "Failed to fetch filesystem storage", e)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val storageSize = withContext(Dispatchers.IO) { AppsAnalysisHelper(reactApplicationContext).getFilesystemStorage() }
+    
+                withContext(Dispatchers.Main) {
+                    promise.resolve(storageSize / (1024.0 * 1024.0)) // Convert bytes to MB
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    promise.reject("FILESYSTEM_ERROR", "Failed to fetch filesystem storage", e)
+                }
+            }
         }
     }
-
-    // ✅ Fetch system storage usage (how much space system files take)
+    
     @ReactMethod
     fun getSystemStorageUsage(promise: Promise) {
-        try {
-            val systemSize = AppsAnalysisHelper(reactApplicationContext).getSystemStorageUsage()
-            promise.resolve(systemSize / (1024.0 * 1024.0)) // Convert bytes to MB
-        } catch (e: Exception) {
-            Log.e("NativeModule", "❌ Error fetching system storage", e)
-            promise.reject("SYSTEM_ERROR", "Failed to fetch system storage", e)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val systemSize = withContext(Dispatchers.IO) { AppsAnalysisHelper(reactApplicationContext).getSystemStorageUsage() }
+    
+                withContext(Dispatchers.Main) {
+                    promise.resolve(systemSize / (1024.0 * 1024.0)) // Convert bytes to MB
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    promise.reject("SYSTEM_ERROR", "Failed to fetch system storage", e)
+                }
+            }
         }
     }
+    
 
     // ✅ Check if media permissions are granted
     @ReactMethod
@@ -103,14 +133,4 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
         }
     }
 
-    @ReactMethod
-    fun getInstalledApps(promise: Promise) {
-        try {
-            val appsHelper = AppsAnalysisHelper(reactApplicationContext)
-            val appsList = appsHelper.getInstalledAppsWithSizes()
-            promise.resolve(appsList)
-        } catch (e: Exception) {
-            promise.reject("APP_ERROR", "Failed to fetch installed apps", e)
-        }
-    }
 }

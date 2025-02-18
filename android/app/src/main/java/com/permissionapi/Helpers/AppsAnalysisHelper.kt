@@ -13,6 +13,9 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableArray
 import java.io.ByteArrayOutputStream
 import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 
 class AppsAnalysisHelper(private val context: Context) {
 
@@ -32,11 +35,11 @@ class AppsAnalysisHelper(private val context: Context) {
     /**
      * Retrieves a list of installed apps, their total storage usage, and icons.
      */
-    fun getInstalledAppsWithSizes(): WritableArray {
+    suspend fun getInstalledAppsWithSizes(): WritableArray = withContext(Dispatchers.IO) {
         val pm: PackageManager = context.packageManager
         val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
         val appList = Arguments.createArray()
-        
+    
         for (app in apps) {
             try {
                 val appInfo = pm.getApplicationInfo(app.packageName, PackageManager.GET_META_DATA)
@@ -44,7 +47,7 @@ class AppsAnalysisHelper(private val context: Context) {
                 val packageName = appInfo.packageName
                 val appSizes = getAppStorageSizes(packageName)
                 val appIconBase64 = getAppIconBase64(appInfo, pm)
-        
+    
                 if (appSizes.totalSize > 0) {
                     val appData = Arguments.createMap()
                     appData.putString("name", appName)
@@ -55,28 +58,29 @@ class AppsAnalysisHelper(private val context: Context) {
                     appData.putDouble("dataSize", appSizes.dataSize / (1024.0 * 1024.0)) // MB
                     appData.putDouble("totalSize", appSizes.totalSize / (1024.0 * 1024.0)) // MB
                     appData.putString("icon", appIconBase64)
-        
+    
                     appList.pushMap(appData)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
-        return appList
+        return@withContext appList
     }
+    
 
     /**
      * Retrieves detailed storage stats for an app, including APK, cache, data, and external cache.
      */
-    private fun getAppStorageSizes(packageName: String): AppStorageSizes {
-        return try {
+    suspend fun getAppStorageSizes(packageName: String): AppStorageSizes = withContext(Dispatchers.IO) {
+        try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val storageStatsManager = context.getSystemService(Context.STORAGE_STATS_SERVICE) as android.app.usage.StorageStatsManager
                 val storageManager = context.getSystemService(Context.STORAGE_SERVICE) as android.os.storage.StorageManager
                 val uuid = storageManager.getUuidForPath(context.filesDir)
                 val storageStats = storageStatsManager.queryStatsForPackage(uuid, packageName, Process.myUserHandle())
-                
-                AppStorageSizes(
+    
+                return@withContext AppStorageSizes(
                     apkSize = storageStats.appBytes,
                     cacheSize = storageStats.cacheBytes,
                     externalCacheSize = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) storageStats.externalCacheBytes else 0L,
@@ -87,26 +91,27 @@ class AppsAnalysisHelper(private val context: Context) {
             } else {
                 val packageInfo = context.packageManager.getPackageInfo(packageName, 0)
                 val sourceDir = packageInfo.applicationInfo?.sourceDir
-                val apkSize = if (sourceDir != null) java.io.File(sourceDir).length() else 0L
-                AppStorageSizes(apkSize, 0L, 0L, 0L, apkSize)
+                val apkSize = if (sourceDir != null) File(sourceDir).length() else 0L
+                return@withContext AppStorageSizes(apkSize, 0L, 0L, 0L, apkSize)
             }
         } catch (e: Exception) {
-            AppStorageSizes(0L, 0L, 0L, 0L, 0L)
+            return@withContext AppStorageSizes(0L, 0L, 0L, 0L, 0L)
         }
     }
+    
 
     /**
      * Retrieves total filesystem storage usage.
      */
-    fun getFilesystemStorage(): Long {
-        return FsScanner().scan(File("/storage/emulated/0")) // Adjust path if needed
+    suspend fun getFilesystemStorage(): Long = withContext(Dispatchers.IO) {
+        return@withContext FsScanner().scan(File("/storage/emulated/0")) // Adjust path if needed
     }
 
     /**
      * Retrieves system storage usage.
      */
-    fun getSystemStorageUsage(): Long {
-        return SystemScanner(context).getSystemStorageUsage()
+    suspend fun getSystemStorageUsage(): Long = withContext(Dispatchers.IO) {
+        return@withContext SystemScanner(context).getSystemStorageUsage()
     }
 }
 
