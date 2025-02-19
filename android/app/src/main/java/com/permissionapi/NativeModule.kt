@@ -14,6 +14,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.provider.Settings
 import android.net.Uri
+import java.io.File
+import androidx.core.content.FileProvider
+
 
 
 
@@ -146,5 +149,39 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
             promise.resolve(false)
         }
     }
+
+    @ReactMethod
+    fun openFileLocation(filePath: String) {
+        try {
+            val file = File(filePath)
+            if (!file.exists()) {
+                Log.e("NativeModule", "File not found: $filePath")
+                return
+            }
+
+            val uri: Uri = FileProvider.getUriForFile(
+                reactApplicationContext,
+                "${reactApplicationContext.packageName}.fileprovider",
+                file
+            )
+
+            val mimeType = when {
+                filePath.endsWith(".jpg", true) || filePath.endsWith(".jpeg", true) || filePath.endsWith(".png", true) -> "image/*"
+                filePath.endsWith(".mp4", true) || filePath.endsWith(".mkv", true) || filePath.endsWith(".avi", true) -> "video/*"
+                filePath.endsWith(".mp3", true) || filePath.endsWith(".wav", true) -> "audio/*"
+                else -> "*/*"
+            }
+
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, mimeType)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+            reactApplicationContext.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("NativeModule", "Error opening file: $filePath", e)
+        }
+    }
+
 
 }

@@ -130,7 +130,8 @@ const AppAnalysis = () => {
       case 'filesystem':
         content = (
           <MediaVisualization 
-            storageData={media} 
+            storageData={media}
+            onSelectMedia={setSelectedItem}
           />
         );
         break;
@@ -157,14 +158,31 @@ const AppAnalysis = () => {
                 <Text style={styles.data}>Size: {formatStorageSize(selectedItem.size)}</Text>
                 <Text style={styles.data}>Percentage: {selectedItem.percentage}%</Text>
               </View>
-              <TouchableOpacity
-                style={styles.settingsButton}
-                onPress={() => NativeModule.openAppSettings(selectedItem.packageName)}
-              >
-                <Text style={styles.buttonText}>
-                  <Icon name="cog" size={16} color="white" /> Go to Settings
-                </Text>
-              </TouchableOpacity>
+
+              {selectedItem.packageName ? (
+                // ✅ App Settings Button
+                <TouchableOpacity
+                  style={styles.settingsButton}
+                  onPress={() => NativeModule.openAppSettings(selectedItem.packageName)}
+                >
+                  <Text style={styles.buttonText}>
+                    <Icon name="cog" size={16} color="white" /> Go to Settings
+                  </Text>
+                </TouchableOpacity>
+              ) : selectedItem.path ? (
+                // ✅ Media Open Button
+                <TouchableOpacity
+                  style={styles.settingsButton}
+                  onPress={() => {
+                    console.log("📂 Trying to open file:", selectedItem.path);
+                    NativeModule.openFileLocation(selectedItem.path)
+                  }}
+                >
+                  <Text style={styles.buttonText}>
+                    <Icon name="folder-open" size={16} color="white" /> Open File
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           ) : route.key === 'full' ? (
             <>

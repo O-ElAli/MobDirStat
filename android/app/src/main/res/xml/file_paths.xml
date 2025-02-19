@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Allow access to external storage root -->
+    <external-path name="external_storage_root" path="." />
+
+    <!-- Allow access to DCIM (Photos/Videos) -->
+    <external-path name="dcim" path="DCIM/" />
+
+    <!-- Allow access to Pictures folder -->
+    <external-path name="pictures" path="Pictures/" />
+
+    <!-- Allow access to Download folder -->
+    <external-path name="downloads" path="Download/" />
+
+    <!-- Allow access to full storage (if needed) -->
+    <root-path name="root" path="/" />
+</paths>

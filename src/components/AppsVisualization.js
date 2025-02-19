@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Button, TouchableOpacity } from 'react-native';
 import Svg, { Rect, G } from 'react-native-svg';
 import { treemap, hierarchy } from 'd3-hierarchy';
 import PropTypes from 'prop-types';
