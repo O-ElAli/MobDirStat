@@ -12,6 +12,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.provider.Settings
+import android.net.Uri
+
 
 
 class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
@@ -122,6 +125,17 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
         }
     }
     
+    @ReactMethod
+    fun openAppSettings(packageName: String) {
+        try {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            intent.data = Uri.parse("package:$packageName")
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            currentActivity?.startActivity(intent) // Make sure to use currentActivity
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     // ✅ Check if media permissions are granted
     @ReactMethod

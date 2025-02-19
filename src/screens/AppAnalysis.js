@@ -5,7 +5,9 @@ import {
   useWindowDimensions, 
   ActivityIndicator, 
   Alert, 
-  StyleSheet 
+  StyleSheet,
+  Button,
+  TouchableOpacity
 } from 'react-native';
 import { NativeModules } from 'react-native';
 import { TabView, TabBar } from 'react-native-tab-view';
@@ -149,11 +151,21 @@ const AppAnalysis = () => {
       <View style={styles.sceneContainer}>
         <View style={styles.storageOverview}>
           {selectedItem ? (
-            <>
-              <Text style={styles.title}>{selectedItem.name}</Text>
-              <Text style={styles.data}>Size: {formatStorageSize(selectedItem.size)}</Text>
-              <Text style={styles.data}>Percentage: {selectedItem.percentage}%</Text>
-            </>
+            <View style={styles.infoContainer}>
+              <View style={styles.textContainer}>
+                <Text style={styles.title}>{selectedItem.name}</Text>
+                <Text style={styles.data}>Size: {formatStorageSize(selectedItem.size)}</Text>
+                <Text style={styles.data}>Percentage: {selectedItem.percentage}%</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.settingsButton}
+                onPress={() => NativeModule.openAppSettings(selectedItem.packageName)}
+              >
+                <Text style={styles.buttonText}>
+                  <Icon name="cog" size={16} color="white" /> Go to Settings
+                </Text>
+              </TouchableOpacity>
+            </View>
           ) : route.key === 'full' ? (
             <>
               <Text style={styles.title}>📊 Phone Storage Overview</Text>
@@ -203,12 +215,41 @@ const AppAnalysis = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#020203' },
   sceneContainer: { flex: 1 },
-  storageOverview: { padding: 10, backgroundColor: '#1E1E1E', marginBottom: 5, borderRadius: 5 },
-  title: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center' },
-  data: { fontSize: 16, color: '#AAAAAA', textAlign: 'center', marginTop: 2 },
-  treemapWrapper: { flex: 1, width: '100%' },
-  loadingText: { fontSize: 16, color: '#FFFFFF', textAlign: 'center', marginTop: 10 },
-  tabBar: { backgroundColor: '#6200EE' }
+  storageOverview: {
+    padding: 10,
+    backgroundColor: '#1E1E1E',
+    marginBottom: 5,
+    borderRadius: 5,
+  },
+  infoContainer: {
+    flexDirection: 'row',  // Arrange items in a row
+    justifyContent: 'space-between', // Pushes text left, button right
+    alignItems: 'center', // Align vertically in the center
+  },
+  textContainer: {
+    flex: 1, // Allow text to take up available space
+    alignItems: 'flex-start', // Align text to the left
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  data: {
+    fontSize: 16,
+    color: '#AAAAAA',
+    marginTop: 2,
+  },
+  settingsButton: {
+    backgroundColor: '#6200EE',
+    padding: 10,
+    borderRadius: 5,
+    marginLeft: 10, // Add spacing from text
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
 });
 
 export default AppAnalysis;

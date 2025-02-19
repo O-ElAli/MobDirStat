@@ -78,6 +78,7 @@ const Visualization = ({ apps, filesystemStorage, systemStorage, width, height, 
     if (node.depth > 1) {
       onSelectApp({
         name: node.data.name,
+        packageName: node.data.packageName, // Add packageName
         size: parseFloat(node.data.size.toFixed(2)),
         percentage: totalSize > 0 ? parseFloat(((node.data.size / totalSize) * 100).toFixed(2)) : 0,
       });
