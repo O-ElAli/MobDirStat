@@ -154,34 +154,68 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
     fun openFileLocation(filePath: String) {
         try {
             val file = File(filePath)
+    
             if (!file.exists()) {
-                Log.e("NativeModule", "File not found: $filePath")
+                Log.e("NativeModule", "❌ File not found: $filePath")
                 return
             }
-
+    
             val uri: Uri = FileProvider.getUriForFile(
                 reactApplicationContext,
                 "${reactApplicationContext.packageName}.fileprovider",
                 file
             )
-
+    
+            // 🔹 Improved MIME Type Handling
             val mimeType = when {
-                filePath.endsWith(".jpg", true) || filePath.endsWith(".jpeg", true) || filePath.endsWith(".png", true) -> "image/*"
-                filePath.endsWith(".mp4", true) || filePath.endsWith(".mkv", true) || filePath.endsWith(".avi", true) -> "video/*"
-                filePath.endsWith(".mp3", true) || filePath.endsWith(".wav", true) -> "audio/*"
-                else -> "*/*"
+                filePath.endsWith(".jpg", true) || filePath.endsWith(".jpeg", true) || filePath.endsWith(".png", true) || filePath.endsWith(".webp", true) -> "image/*"
+                filePath.endsWith(".mp4", true) || filePath.endsWith(".mkv", true) || filePath.endsWith(".avi", true) || filePath.endsWith(".mov", true) || filePath.endsWith(".flv", true) -> "video/*"
+                filePath.endsWith(".mp3", true) || filePath.endsWith(".wav", true) || filePath.endsWith(".aac", true) || filePath.endsWith(".ogg", true) || filePath.endsWith(".flac", true) -> "audio/*"
+                filePath.endsWith(".pdf", true) -> "application/pdf"
+                filePath.endsWith(".doc", true) || filePath.endsWith(".docx", true) -> "application/msword"
+                filePath.endsWith(".xls", true) || filePath.endsWith(".xlsx", true) -> "application/vnd.ms-excel"
+                filePath.endsWith(".ppt", true) || filePath.endsWith(".pptx", true) -> "application/vnd.ms-powerpoint"
+                filePath.endsWith(".zip", true) || filePath.endsWith(".rar", true) || filePath.endsWith(".7z", true) || filePath.endsWith(".tar", true) -> "application/octet-stream"
+                filePath.endsWith(".txt", true) || filePath.endsWith(".log", true) -> "text/plain"
+                else -> "*/*"  // Default if unknown
             }
-
+    
+            Log.d("NativeModule", "📂 Opening file: $filePath with MIME: $mimeType")
+    
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(uri, mimeType)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-
-            reactApplicationContext.startActivity(intent)
+    
+            try {
+                reactApplicationContext.startActivity(intent)
+            } catch (e: Exception) {
+                Log.e("NativeModule", "⚠️ Failed to open file: $filePath, redirecting to folder...", e)
+                openFolderLocation(file)
+            }
         } catch (e: Exception) {
-            Log.e("NativeModule", "Error opening file: $filePath", e)
+            Log.e("NativeModule", "❌ Error opening file: $filePath", e)
         }
     }
+    
+    /**
+     * Opens the containing folder of the file.
+     */
+    private fun openFolderLocation(file: File) {
+        try {
+            val folderUri = Uri.parse(file.parentFile?.absolutePath ?: return)
+            Log.d("NativeModule", "📂 Redirecting to folder: $folderUri")
+    
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(folderUri, "resource/folder")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+    
+            reactApplicationContext.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("NativeModule", "❌ Error opening folder location", e)
+        }
+    }     
 
 
 }
