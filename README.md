@@ -10,25 +10,30 @@ MobDirStat is a **WinDirStat-like storage analysis tool** for Android, built usi
 ✅ **Open Media Files** - Click media files to open them directly in the gallery.
 ✅ **Caching & Performance Optimization** - Future updates may store analyzed data for faster access.
 
-## Screenshots 📸
+## Screenshots 📸  
+
 <details>
-   <Text>
-      Click to view welcome screen and permissions
-   </Text>
-   ![Welcome](screenshots/Welcome.jpg)
-   ![Permissions](screenshots/Grant%20Permissions.jpg)
-   ![Select MobDirStat](screenshots/Select%20MobDirStat.jpg)
-   **Select MobDirStat then grant**
-   ![Phone overview](screenshots/Phone%20Overview%20Tab.jpg)
-   **Overview of the entire phone's storage system**
-   ![Apps tab](screenshots/General%20Apps%20Tab.jpg)
-   **Apps tab**
-   ![Media tab](screenshots/General%Media%20Tab.jpg)
-   **Media tab**
-   ![Selected App](screenshots/Selected%20app%20in%20Apps%20Tab.jpg)
-   **Click go to settings**
-   ![App settings](screenshots/Settings%20Redirect.jpg)
+  <summary>Details</summary>  
+
+Click to view welcome screen and permissions:  
+- ![Welcome](screenshots/Welcome.jpg)  
+- ![Permissions](screenshots/Grant%20Permissions.jpg)  
+- ![Select MobDirStat](screenshots/Select%20MobDirStat.jpg) **Select MobDirStat then grant**  
+
+### **Phone Overview**  
+Overview of the entire phone's storage system:  
+- ![Phone Overview](screenshots/Phone%20Overview%20Tab.jpg)  
+
+### **Tabs**  
+- **Apps Tab**: ![Apps Tab](screenshots/General%20Apps%20Tab.jpg)  
+- **Media Tab**: ![Media Tab](screenshots/General%20Media%20Tab.jpg)  
+
+### **Selected App & Settings**  
+- **Selected App**: ![Selected App](screenshots/Selected%20app%20in%20Apps%20Tab.jpg)  
+- **Click Go to Settings**: ![App Settings](screenshots/Settings%20Redirect.jpg)  
+
 </details>
+
 
 
 
