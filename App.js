@@ -6,7 +6,6 @@ import { NativeModules } from 'react-native';
 
 import Home from './src/screens/Home';
 import AppAnalysis from './src/screens/AppAnalysis';
-import MediaAnalysis from './src/screens/MediaAnalysis';
 
 const { NativeModule } = NativeModules;
 const Stack = createStackNavigator();
@@ -59,7 +58,6 @@ const App = () => {
             screenOptions={{ headerShown: false}}>
             <Stack.Screen name="Home" component={Home} />
             <Stack.Screen name="App Analysis" component={AppAnalysis} />
-            <Stack.Screen name="Media Analysis" component={MediaAnalysis} />
           </Stack.Navigator>
         </NavigationContainer>
     );

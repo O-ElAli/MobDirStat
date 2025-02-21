@@ -1,79 +1,143 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# MobDirStat - Android Storage Analysis App
 
-# Getting Started
+MobDirStat is a **WinDirStat-like storage analysis tool** for Android, built using **React Native and Kotlin**. It scans and visualizes **app and media storage**, helping users understand how their device's storage is used and allowing them to manage it efficiently.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+## Features 🚀
 
-## Step 1: Start the Metro Server
+✅ **Analyze App & Media Storage** - Track storage usage for installed apps and media files.
+✅ **Treemap Visualization** - Interactive storage map for better insights (apps and media visualized separately).
+✅ **Open & Manage Apps** - Click an app to access its settings and uninstall if needed.
+✅ **Open Media Files** - Click media files to open them directly in the gallery.
+✅ **Caching & Performance Optimization** - Future updates may store analyzed data for faster access.
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+## Screenshots 📸
+<details>
+   <Text>
+      Click to view welcome screen and permissions
+   </Text>
+   ![Welcome](screenshots/Welcome.jpg)
+   ![Permissions](screenshots/Grant%20Permissions.jpg)
+   ![Select MobDirStat](screenshots/Select%20MobDirStat.jpg)
+   **Select MobDirStat then grant**
+   ![Phone overview](screenshots/Phone%20Overview%20Tab.jpg)
+   **Overview of the entire phone's storage system**
+   ![Apps tab](screenshots/General%20Apps%20Tab.jpg)
+   **Apps tab**
+   ![Media tab](screenshots/General%Media%20Tab.jpg)
+   **Media tab**
+   ![Selected App](screenshots/Selected%20app%20in%20Apps%20Tab.jpg)
+   **Click go to settings**
+   ![App settings](screenshots/Settings%20Redirect.jpg)
+</details>
 
-To start Metro, run the following command from the _root_ of your React Native project:
+
+
+
+## Installation 📲
+
+### **1. Download the APK**
+
+Grab the latest APK from the **[Releases](https://github.com/O-ElAli/MobDirStat/releases)** page.
+
+### **2. Install on Your Device**
+
+- Open the downloaded APK.
+- If prompted, allow installation from unknown sources.
+- Install and start analyzing your storage!
+
+## Usage 💡
+
+1. **Launch the App** - The home screen will display an overview of your storage.
+2. **Provide Permissions** - Ensure the app has the necessary storage permissions for accurate analysis.
+3. **View App Analysis** - Navigate to the **Apps tab** to see how much space apps are using.
+4. **View Media Storage** - Open the **Media tab** to check media file usage.
+5. **Interact with Treemap** - Tap on **apps or media** in the visualization to get more options.
+6. **Manage Storage** - Click an app to open its settings or a media file to view it.
+
+## Technical Details 🛠️
+
+- **Frontend:** React Native (JavaScript/TypeScript)
+- **Backend:** Native Android (Kotlin)
+- **Visualization:** Custom-built treemap using D3.js and other supporting libraries.
+- **Permissions:** Requires access to storage for analysis.
+- **Performance Considerations:** Implemented optimizations to ensure smooth performance when handling large storage scans.
+
+## Development Setup 🏗️
+
+### **1. Clone the Repository**
 
 ```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+ git clone https://github.com/O-ElAli/MobDirStat.git
+ cd MobDirStat
 ```
 
-## Step 2: Start your Application
-
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
-
-### For Android
+### **2. Install Dependencies**
 
 ```bash
-# using npm
-npm run android
-
-# OR using Yarn
-yarn android
+ npm install  # or yarn install
 ```
 
-### For iOS
+### **3. Run the App**
 
+Start the development server:
 ```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+ npx react-native start
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+For Android:
+```bash
+ npx react-native run-android
+```
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+For iOS (if applicable, planned for future updates):
+```bash
+ npx react-native run-ios
+```
 
-## Step 3: Modifying your App
+*(Ensure you have an Android emulator or a physical device connected.)*
 
-Now that you have successfully run the app, let's modify it.
+## Future Improvements 🚧
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+🔹 **Add Database Caching** - Store previous scans for faster analysis.
+🔹 **Improve UI/UX** - Enhance the app’s design and user experience.
+🔹 **Support More File Types** - Expand media analysis capabilities.
+🔹 **Add Storage Cleaning Options** - Suggest deletions for large or unused files.
+🔹 **iOS Version** - Future updates will include an iOS version.
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+## 📜 Required Permissions 🔑  
 
-## Congratulations! :tada:
+The app requires the following permissions to function properly:  
 
-You've successfully run and modified your React Native App. :partying_face:
+### **Storage & Media Access**  
+- **`android.permission.READ_MEDIA_IMAGES`** – Allows reading image files stored on the device.  
+- **`android.permission.READ_MEDIA_VIDEO`** – Grants access to video files for analysis.  
+- **`android.permission.READ_MEDIA_AUDIO`** – Enables reading audio files to assess storage usage.  
+- **`android.permission.READ_EXTERNAL_STORAGE`** – Provides access to external storage for analyzing stored files. *(Required for compatibility with older Android versions.)*  
+- **`android.permission.MANAGE_EXTERNAL_STORAGE`** – *(Android 11+)* Grants full access to manage external storage, allowing in-depth analysis of files and apps.  
 
-### Now what?
+### **App Data & Package Analysis**  
+- **`android.permission.QUERY_ALL_PACKAGES`** – Allows retrieving a list of all installed applications on the device, essential for analyzing app storage usage.  
+- **`android.permission.GET_PACKAGE_SIZE`** – Enables fetching storage details of each installed app, including cache and data usage.  
+- **`android.permission.PACKAGE_USAGE_STATS`** *(Usage Access Required)* – Grants access to app usage statistics, which may be necessary for advanced analysis. *(This permission must be manually enabled by the user in system settings.)*  
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
 
-# Troubleshooting
+These permissions are necessary to retrieve storage information and display an accurate visualization of app and media usage.
 
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+## Contributing 🤝
 
-# Learn More
+Want to contribute? Here’s how:
 
-To learn more about React Native, take a look at the following resources:
+1. Fork the repository.
+2. Create a new branch (`feature-branch-name`).
+3. Commit your changes (`git commit -m 'Added new feature'`).
+4. Push to the branch (`git push origin feature-branch-name`).
+5. Open a Pull Request.
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+## License 📜
+
+This project is licensed under the **MIT License** - see the [`LICENSE`](LICENSE) file for details.
+
+---
+
+⭐ **If you find this project useful, don't forget to star the repo!** ⭐
+

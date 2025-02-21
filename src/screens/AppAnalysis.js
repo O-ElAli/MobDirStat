@@ -12,7 +12,7 @@ import {
 import { NativeModules } from 'react-native';
 import { TabView, TabBar } from 'react-native-tab-view';
 import Visualization from '../components/AppsVisualization';
-import PieChartComponent from '../components/PieChartComponent';
+//import PieChartComponent from '../components/PieChartComponent';
 import MediaVisualization from '../components/MediaVisualization';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -97,7 +97,7 @@ const AppAnalysis = () => {
     { key: 'full', title: 'Map', icon: 'grid' },
     { key: 'apps', title: 'Apps', icon: 'apps' },
     { key: 'filesystem', title: 'Media', icon: 'folder' },
-    { key: 'pie', title: 'Types', icon: 'chart-pie' }
+    // { key: 'pie', title: 'Types', icon: 'chart-pie' }
   ];
 
   const renderScene = ({ route }) => {
@@ -135,15 +135,15 @@ const AppAnalysis = () => {
           />
         );
         break;
-      case 'pie':
-        content = (
-          <PieChartComponent 
-            apps={apps} 
-            filesystemStorage={totalStorage.filesystem} 
-            systemStorage={totalStorage.system} 
-          />
-        );
-        break;
+      // case 'pie':
+      //   content = (
+      //     <PieChartComponent 
+      //       apps={apps} 
+      //       filesystemStorage={totalStorage.filesystem} 
+      //       systemStorage={totalStorage.system} 
+      //     />
+      //   );
+      //   break;
       default:
         content = null;
     }
