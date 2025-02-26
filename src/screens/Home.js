@@ -102,7 +102,7 @@ const Home = ({ navigation }) => {
   if (currentScreen === "welcome") {
     return (
       <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-        <Text style={styles.title}>Welcome to My App Analysis Application</Text>
+        <Text style={styles.title}>Welcome to MobDirStat</Text>
         <Button
           title="Continue"
           onPress={() => fadeOutAndContinue(permissionsGranted ? "main" : "explanation")}
@@ -142,9 +142,7 @@ const Home = ({ navigation }) => {
       <Text style={styles.title}>Main Page</Text>
       <Text style={styles.subtitle}>Manage permissions and navigate seamlessly</Text>
       <View style={styles.buttonContainer}>
-        <Button title="App Analysis" onPress={() => navigation.navigate('App Analysis')} color="#BB86FC" />
-        <View style={styles.spacing} />
-        <Button title="Media Analysis" onPress={() => navigation.navigate('Media Analysis')} color="#FF0266" />
+        <Button title="Analyse storage" onPress={() => navigation.navigate('App Analysis')} color="#BB86FC" />
       </View>
     </Animated.View>
   );
@@ -173,9 +171,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     width: '100%',
     alignItems: 'center',
-  },
-  spacing: {
-    height: 10,
   },
   loadingText: {
     marginTop: 10,

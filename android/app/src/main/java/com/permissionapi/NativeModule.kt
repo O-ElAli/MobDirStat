@@ -26,7 +26,7 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
         return "NativeModule"
     }
 
-    // ✅ Function to check and request media permissions
+    // Function to check and request media permissions
     private fun hasMediaPermissions(): Boolean {
         val permissions = arrayOf(
             Manifest.permission.READ_MEDIA_IMAGES,
@@ -140,7 +140,7 @@ class NativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
         }
     }
 
-    // ✅ Check if media permissions are granted
+    // Check if media permissions are granted
     @ReactMethod
     fun checkMediaPermissions(promise: Promise) {
         if (hasMediaPermissions()) {

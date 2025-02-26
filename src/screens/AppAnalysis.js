@@ -6,7 +6,6 @@ import {
   ActivityIndicator, 
   Alert, 
   StyleSheet,
-  Button,
   TouchableOpacity
 } from 'react-native';
 import { NativeModules } from 'react-native';
